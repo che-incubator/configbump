@@ -25,15 +25,17 @@ type ConfigMapReconcilerConfig struct {
 	Labels          string
 	Namespace       string
 	OnReconcileDone func() error
+	NewClient       func(*rest.Config) (client.Client, error)
 }
 
 type configMapReconciler struct {
-	client       client.Client
-	clientConfig *rest.Config
-	config       ConfigMapReconcilerConfig
-	selector     labels.Selector
-	baseDir      string
-	namespace    string
+	client        client.Client
+	clientConfig  *rest.Config
+	newClientFunc func(*rest.Config) (client.Client, error)
+	config        ConfigMapReconcilerConfig
+	selector      labels.Selector
+	baseDir       string
+	namespace     string
 }
 
 // configFiles is a map where keys are the names of the files and values are digests of their content
@@ -46,11 +48,20 @@ func New(mgr manager.Manager, config ConfigMapReconcilerConfig) error {
 		return err
 	}
 
+	newClientFn := config.NewClient
+
+	if newClientFn == nil {
+		newClientFn = func(cfg *rest.Config) (client.Client, error) {
+			return client.New(cfg, client.Options{})
+		}
+	}
+
 	r := &configMapReconciler{
-		client:       mgr.GetClient(),
-		clientConfig: mgr.GetConfig(),
-		config:       config,
-		selector:     lbls.AsSelector(),
+		client:        mgr.GetClient(),
+		clientConfig:  mgr.GetConfig(),
+		newClientFunc: newClientFn,
+		config:        config,
+		selector:      lbls.AsSelector(),
 	}
 
 	// register the controller with the manager
@@ -72,11 +83,13 @@ func New(mgr manager.Manager, config ConfigMapReconcilerConfig) error {
 
 // sync performs the sync of the local set of files with the configured config maps
 func (c *configMapReconciler) sync(managerRunning bool) error {
+	defer c.config.OnReconcileDone()
+
 	var cl client.Client
 	if managerRunning {
 		cl = c.client
 	} else {
-		x, err := client.New(c.clientConfig, client.Options{})
+		x, err := c.newClientFunc(c.clientConfig)
 		if err != nil {
 			return err
 		}
