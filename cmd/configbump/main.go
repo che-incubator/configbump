@@ -21,8 +21,9 @@ type opts struct {
 	Namespace string `arg:"-n,env:CONFIG_BUMP_NAMESPACE" help:"The namespace in which to look for the config maps to persist. Can also be specified using env var: CONFIG_BUMP_NAMESPACE. If not specified, it is autodetected."`
 
 	// TODO not supported yet
-	TLSVerify bool   `arg:"--tls-verify,-t,env:CONFIG_BUMP_TLS_VERIFY" default:"true" help:"Whether to require valid certificate chain. Can also be specified using env var: CONFIG_BUMP_TLS_VERIFY"`
-	Labels    string `arg:"-l,env:CONFIG_BUMP_LABELS" help:"An expression to match the labels against. Consult the Kubernetes documentation for the syntax required. Can also be specified using env var: CONFIG_BUMP_LABELS"`
+	TLSVerify bool `arg:"--tls-verify,-t,env:CONFIG_BUMP_TLS_VERIFY" default:"true" help:"Whether to require valid certificate chain. Can also be specified using env var: CONFIG_BUMP_TLS_VERIFY"`
+
+	Labels string `arg:"-l,required,env:CONFIG_BUMP_LABELS" help:"An expression to match the labels against. Consult the Kubernetes documentation for the syntax required. Can also be specified using env var: CONFIG_BUMP_LABELS"`
 
 	// TODO the whole process bumping not implemented yet.
 	ProcessCommand       string `arg:"--process-command,-c,env:CONFIG_BUMP_PROCESS_COMMAND" help:"The commandline by which to identify the process to send the signal to. This can be a regular expression. Ignored if process pid is specified. Can also be specified using env var: CONFIG_BUMP_PROCESS_COMMAND"`

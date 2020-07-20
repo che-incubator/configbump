@@ -11,7 +11,7 @@
             "mode": "auto",
             "program": "${fileDirname}",
             "env": {},
-            "args": ["--dir", "test", "--namespace", "default"]
+            "args": ["--dir", "test", "--namespace", "default", "--labels", "bump=true"]
         }
     ]
 }
