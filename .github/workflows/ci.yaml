@@ -1,0 +1,42 @@
+#
+# Copyright (c) 2020 Red Hat, Inc.
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+name: CI
+# Trigger the workflow on push
+on:
+  push:
+    branches:
+      - master
+jobs:
+  docker-build:
+    runs-on: ubuntu-18.04
+    strategy:
+      fail-fast: false
+    env:
+      IMAGE_FULL: quay.io/che-incubator/configbump:next
+      CACHE_IMAGE_FULL: quay.io/che-incubator/configbump:cache
+    steps:
+    - uses: actions/checkout@v2
+      name: Checkoutconfigbump source code
+    - name: Docker Buildx
+      uses: crazy-max/ghaction-docker-buildx@v1.6.2
+      with:
+        buildx-version: v0.4.1
+    - name: "Docker prepare"
+      run: docker image prune -a -f
+    - name: "Docker Quay.io Login"
+      run:  docker login -u "${{ secrets.QUAY_USERNAME }}" -p "${{ secrets.QUAY_PASSWORD }}" quay.io
+    - name: "Docker build with cache"
+      uses: nick-invision/retry@v1
+      with:
+        timeout_minutes: 20
+        max_attempts: 5
+        retry_wait_seconds: 60
+        command: docker buildx build --platform linux/amd64 --cache-from="type=registry,ref=${CACHE_IMAGE_FULL}" --cache-to="type=registry,ref=${CACHE_IMAGE_FULL},mode=max" -t ${IMAGE_FULL}  -f build/dockerfiles/Dockerfile --push .
+    - name: "Docker Logout"
+      run: docker logout
