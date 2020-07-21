@@ -15,6 +15,8 @@ RUN apk add --no-cache ca-certificates
 RUN adduser -D -g '' appuser
 WORKDIR /go/src/github.com/che-incubator/configbump
 COPY . /go/src/github.com/che-incubator/configbump
+# Get dependancies - will also be cached if we won't change mod/sum
+RUN go mod download
 RUN CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-w -s' -a -installsuffix cgo -o configbump cmd/configbump/main.go
 
 FROM alpine:3.12

@@ -37,8 +37,6 @@ jobs:
            --cache-to "type=local,dest=/tmp/.buildx-cache" \
            --tag ${IMAGE_FULL} \
            --file build/dockerfiles/Dockerfile --push .
-    - name: Docker Check Manifest
-      run: docker run --rm mplatform/mquery ${IMAGE_FULL}
     - name: "Docker Logout"
       run: docker logout
     - name: Clear
