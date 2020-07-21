@@ -37,14 +37,18 @@ jobs:
           ${{ runner.os }}-buildx-
     - name: "Docker Quay.io Login"
       run:  docker login -u "${{ secrets.QUAY_USERNAME }}" -p "${{ secrets.QUAY_PASSWORD }}" quay.io
+    - name: "Check cache"
+      run: go mod download -json
     - name: "Docker build with cache"
       run: |
          docker buildx build \
-           --platform linux/amd64,linux/s390x \
+           --platform linux/amd64 \
            --cache-from "type=local,src=/tmp/.buildx-cache" \
            --cache-to "type=local,dest=/tmp/.buildx-cache" \
            --tag ${IMAGE_FULL} \
            --file build/dockerfiles/Dockerfile --push .
+    - name: "Check cache2"
+      run: go mod download -json
     - name: Docker Check Manifest
       run: docker run --rm mplatform/mquery ${IMAGE_FULL}
     - name: "Docker Logout"
