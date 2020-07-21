@@ -19,7 +19,6 @@ jobs:
       fail-fast: false
     env:
       IMAGE_FULL: quay.io/che-incubator/configbump:next
-      CACHE_IMAGE_FULL: quay.io/che-incubator/configbump:cache
     steps:
     - uses: actions/checkout@v2
       name: Checkout configbump source code
