@@ -25,8 +25,13 @@ jobs:
       name: Checkout configbump source code
     - name: Docker Buildx
       uses: crazy-max/ghaction-docker-buildx@v3.2.0
+    - name: Buildx cache
+      uses: actions/cache@v2
       with:
-        buildx-version: v0.4.1
+        path:/tmp/.buildx-cache
+        key: ${{ runner.os }}-buildx-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-buildx-
     - name: "Docker Quay.io Login"
       run:  docker login -u "${{ secrets.QUAY_USERNAME }}" -p "${{ secrets.QUAY_PASSWORD }}" quay.io
     - name: "Docker build with cache"
@@ -37,7 +42,7 @@ jobs:
            --cache-to "type=local,dest=/tmp/.buildx-cache" \
            --tag ${IMAGE_FULL} \
            --file build/dockerfiles/Dockerfile --push .
-    - name: "Docker Logout"
+    - name: Docker Logout
       run: docker logout
     - name: Clear
       run: rm -f ${HOME}/.docker/config.json
