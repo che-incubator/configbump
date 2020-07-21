@@ -31,7 +31,7 @@ jobs:
       uses: actions/cache@v2
       id: cache
       with:
-        path: /tmp/.2buildx-cache
+        path: /tmp/buildx-cache
         key: ${{ runner.os }}-buildx-${{ github.sha }}
         restore-keys: |
           ${{ runner.os }}-buildx-
@@ -41,8 +41,8 @@ jobs:
       run: |
          docker buildx build \
            --platform linux/amd64 \
-           --cache-from "type=local,src=/tmp/.2buildx-cache" \
-           --cache-to "type=local,dest=/tmp/.2buildx-cache" \
+           --cache-from "type=local,src=/tmp/buildx-cache" \
+           --cache-to "type=local,dest=/tmp/buildx-cache" \
            --tag ${IMAGE_FULL} \
            --file build/dockerfiles/Dockerfile --push .
     - name: Docker Logout
