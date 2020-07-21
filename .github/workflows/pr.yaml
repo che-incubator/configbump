@@ -18,20 +18,26 @@ jobs:
       fail-fast: false
     env:
       IMAGE_FULL: quay.io/eclipse/che-dashboard:next
-      CACHE_IMAGE_FULL: docker.io/cheincubator/che-dashboard:cache
     steps:
-    - uses: actions/checkout@v2
-      name: Checkout che-dashboard source code
-    - name: Docker Buildx
-      uses: crazy-max/ghaction-docker-buildx@v1.6.2
-      with:
-        buildx-version: v0.4.1
-    - name: "Docker prepare"
-      run: docker image prune -a -f
-    - name: "Docker build with cache"
-      uses: nick-invision/retry@v1
-      with:
-        timeout_minutes: 100
-        max_attempts: 5
-        retry_wait_seconds: 60
-        command: docker buildx build --platform linux/amd64 --cache-from="type=registry,ref=${CACHE_IMAGE_FULL}" -t ${IMAGE_FULL}  -f apache.Dockerfile .
+      - uses: actions/checkout@v2
+        name: Checkout configbump source code
+      - name: Docker Buildx
+        uses: crazy-max/ghaction-docker-buildx@v3.2.0
+        with:
+          buildx-version: v0.4.1
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        id: cache
+        with:
+          path: /tmp/buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+      - name: "Docker build with cache"
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            --cache-from "type=local,src=/tmp/buildx-cache" \
+            --cache-to "type=local,dest=/tmp/buildx-cache" \
+            --tag ${IMAGE_FULL} \
+            --file build/dockerfiles/Dockerfile .
