@@ -42,7 +42,7 @@ jobs:
            --cache-to "type=local,dest=/tmp/.buildx-cache" \
            --tag ${IMAGE_FULL} \
            --file build/dockerfiles/Dockerfile --push .
-    - name: Docker Logout
+    - name: "Docker Logout"
       run: docker logout
     - name: Clear
       run: rm -f ${HOME}/.docker/config.json
