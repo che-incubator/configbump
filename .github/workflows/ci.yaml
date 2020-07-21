@@ -27,14 +27,6 @@ jobs:
       uses: crazy-max/ghaction-docker-buildx@v3.2.0
       with:
         buildx-version: v0.4.1
-    - name: Cache Docker layers
-      uses: actions/cache@v2
-      id: cache
-      with:
-        path: /tmp/.buildx-cache
-        key: ${{ runner.os }}-buildx-${{ github.sha }}
-        restore-keys: |
-          ${{ runner.os }}-buildx-
     - name: "Docker Quay.io Login"
       run:  docker login -u "${{ secrets.QUAY_USERNAME }}" -p "${{ secrets.QUAY_PASSWORD }}" quay.io
     - name: "Docker build with cache"
