@@ -35,14 +35,14 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestReactsOnCreate(t *testing.T) {
+func TestCreatesFiles(t *testing.T) {
 	cm := &corev1.ConfigMap{}
 	cm.ObjectMeta.Name = "test"
 	cm.Data = make(map[string]string)
 	cm.Data["created1.txt"] = "data1"
 	cm.Data["created2.txt"] = "data2"
 
-	_, ctrl, err := testWith(cm)
+	_, ctrl, err := testWith("", cm)
 	if err != nil {
 		t.Fatalf("Failed to setup up the test. %s", err)
 	}
@@ -90,16 +90,176 @@ func TestReactsOnCreate(t *testing.T) {
 	}
 }
 
-func TestReactsOnUpdate(t *testing.T) {
+func TestUpdatesFiles(t *testing.T) {
+	cm := &corev1.ConfigMap{}
+	cm.ObjectMeta.Name = "test"
+	cm.Data = make(map[string]string)
+	cm.Data["created1.txt"] = "data1"
+	cm.Data["created2.txt"] = "data2"
+
+	_, ctrl, err := testWith("", cm)
+	if err != nil {
+		t.Fatalf("Failed to setup up the test. %s", err)
+	}
+
+	// make one of the files out of sync of the "cluster" so that we can see the update happening
+	err = ioutil.WriteFile(filepath.Join(state.workDir, "created1.txt"), []byte("origdata"), 0644)
+	if err != nil {
+		t.Fatalf("Failed to precreate a file to be updated. %s", err)
+	}
+
+	req := reconcile.Request{
+		NamespacedName: types.NamespacedName{
+			Name:      cm.ObjectMeta.Name,
+			Namespace: cm.ObjectMeta.Namespace,
+		},
+	}
+	ctrl.Reconcile(req)
+
+	files, err := ioutil.ReadDir(state.workDir)
+	if err != nil {
+		t.Fatalf("Failed to read the sync dir. %s", err)
+	}
+
+	if len(files) != 2 {
+		t.Fatalf("There should have been exactly 2 files in the sync dir but there were %d.", len(files))
+	}
+
+	foundCreated1 := false
+	foundCreated2 := false
+
+	for _, f := range files {
+		if f.Name() == "created1.txt" {
+			contents, err := ioutil.ReadFile(filepath.Join(state.workDir, f.Name()))
+			if err == nil && string(contents) == "data1" {
+				foundCreated1 = true
+			}
+		} else if f.Name() == "created2.txt" {
+			contents, err := ioutil.ReadFile(filepath.Join(state.workDir, f.Name()))
+			if err == nil && string(contents) == "data2" {
+				foundCreated2 = true
+			}
+		}
+	}
+
+	if !foundCreated1 {
+		t.Error("Failed to find the expected created1.txt with matching contents.")
+	}
+
+	if !foundCreated2 {
+		t.Error("Failed to find the expected created2.txt with matching contents.")
+	}
 }
 
-func TestReactsOnDelete(t *testing.T) {
+func TestDeletesFiles(t *testing.T) {
+	cm := &corev1.ConfigMap{}
+	cm.ObjectMeta.Name = "test"
+	cm.Data = make(map[string]string)
+	cm.Data["created2.txt"] = "data2"
+
+	_, ctrl, err := testWith("", cm)
+	if err != nil {
+		t.Fatalf("Failed to setup up the test. %s", err)
+	}
+
+	// make one of the files out of sync of the "cluster" so that we can see the update happening
+	err = ioutil.WriteFile(filepath.Join(state.workDir, "created1.txt"), []byte("data1"), 0644)
+	if err != nil {
+		t.Fatalf("Failed to precreate a file to be updated. %s", err)
+	}
+
+	req := reconcile.Request{
+		NamespacedName: types.NamespacedName{
+			Name:      cm.ObjectMeta.Name,
+			Namespace: cm.ObjectMeta.Namespace,
+		},
+	}
+	ctrl.Reconcile(req)
+
+	files, err := ioutil.ReadDir(state.workDir)
+	if err != nil {
+		t.Fatalf("Failed to read the sync dir. %s", err)
+	}
+
+	if len(files) != 1 {
+		t.Fatalf("There should have been exactly 1 file in the sync dir but there were %d.", len(files))
+	}
+
+	foundCreated2 := false
+
+	for _, f := range files {
+		if f.Name() == "created2.txt" {
+			contents, err := ioutil.ReadFile(filepath.Join(state.workDir, f.Name()))
+			if err == nil && string(contents) == "data2" {
+				foundCreated2 = true
+			}
+		}
+	}
+
+	if !foundCreated2 {
+		t.Error("Failed to find the expected created2.txt with matching contents.")
+	}
 }
 
-func TestReactsOnLabelChange(t *testing.T) {
+func TestPicksConfigMapsByLabel(t *testing.T) {
+	cm1 := &corev1.ConfigMap{}
+	cm1.ObjectMeta.Name = "test1"
+	cm1.Data = make(map[string]string)
+	cm1.Data["created1.txt"] = "data1"
+	cm2 := &corev1.ConfigMap{}
+	cm2.ObjectMeta.Name = "test2"
+	cm2.ObjectMeta.Labels = make(map[string]string)
+	cm2.ObjectMeta.Labels["bump"] = "true"
+	cm2.Data = make(map[string]string)
+	cm2.Data["created2.txt"] = "data2"
+
+	_, ctrl, err := testWith("bump=true", cm1, cm2)
+	if err != nil {
+		t.Fatalf("Failed to setup up the test. %s", err)
+	}
+
+	req := reconcile.Request{
+		NamespacedName: types.NamespacedName{
+			Name:      cm1.ObjectMeta.Name,
+			Namespace: cm1.ObjectMeta.Namespace,
+		},
+	}
+	ctrl.Reconcile(req)
+
+	req = reconcile.Request{
+		NamespacedName: types.NamespacedName{
+			Name:      cm2.ObjectMeta.Name,
+			Namespace: cm2.ObjectMeta.Namespace,
+		},
+	}
+	ctrl.Reconcile(req)
+
+	files, err := ioutil.ReadDir(state.workDir)
+	if err != nil {
+		t.Fatalf("Failed to read the sync dir. %s", err)
+	}
+
+	if len(files) != 1 {
+		t.Fatalf("There should have been exactly 1 file in the sync dir but there were %d.", len(files))
+	}
+
+	foundCreated2 := false
+
+	for _, f := range files {
+		if f.Name() == "created2.txt" {
+			contents, err := ioutil.ReadFile(filepath.Join(state.workDir, f.Name()))
+			if err == nil && string(contents) == "data2" {
+				foundCreated2 = true
+			}
+		}
+	}
+
+	if !foundCreated2 {
+		t.Error("Failed to find the expected created2.txt with matching contents.")
+	}
 }
 
-func testWith(cms ...runtime.Object) (client.Client, reconcile.Reconciler, error) {
+func testWith(labels string, cms ...runtime.Object) (client.Client, reconcile.Reconciler, error) {
 	cl := fake.NewFakeClient(cms...)
 
 	cfg := rest.Config{}
@@ -140,6 +300,7 @@ func testWith(cms ...runtime.Object) (client.Client, reconcile.Reconciler, error
 		NewClient: func(*rest.Config) (client.Client, error) {
 			return cl, nil
 		},
+		Labels: labels,
 	})
 	if err != nil {
 		return nil, nil, err
