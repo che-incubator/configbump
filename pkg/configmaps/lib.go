@@ -12,9 +12,12 @@ import (
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 var log = logf.Log.WithName("configmaps")
@@ -42,10 +45,10 @@ type configMapReconciler struct {
 type configFiles = map[string][16]byte
 
 // New creates a config map reconciler with given configuration and configures a controller for it
-func New(mgr manager.Manager, config ConfigMapReconcilerConfig) error {
+func New(mgr manager.Manager, config ConfigMapReconcilerConfig) (controller.Controller, error) {
 	lbls, err := labels.ConvertSelectorToLabelsMap(config.Labels)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	newClientFn := config.NewClient
@@ -64,26 +67,33 @@ func New(mgr manager.Manager, config ConfigMapReconcilerConfig) error {
 		selector:      lbls.AsSelector(),
 	}
 
+	err = r.sync(false)
+	if err != nil {
+		return nil, err
+	}
+
 	// register the controller with the manager
 	bld := builder.ControllerManagedBy(mgr)
 	bld.Named("config-bump")
-	bld.ForType(&corev1.ConfigMap{})
+	bld.For(&corev1.ConfigMap{})
+	bld.Watches(&source.Kind{Type: &corev1.ConfigMap{}}, &handler.EnqueueRequestForObject{})
 	// note that we do NOT set up the filter to only included the labeled config maps.
 	// That way we would never see the events about deleted config maps or config maps from which
 	// the label has been removed
 	//bld.WithEventFilter(predicate.ResourceFilterPredicate{Selector: r.selector})
-	if err = bld.Complete(r); err != nil {
-		return err
+	ctrl, err := bld.Build(r)
+	if err != nil {
+		return nil, err
 	}
 
-	r.sync(false)
-
-	return nil
+	return ctrl, nil
 }
 
 // sync performs the sync of the local set of files with the configured config maps
 func (c *configMapReconciler) sync(managerRunning bool) error {
-	defer c.config.OnReconcileDone()
+	if c.config.OnReconcileDone != nil {
+		defer c.config.OnReconcileDone()
+	}
 
 	var cl client.Client
 	if managerRunning {
@@ -109,6 +119,10 @@ func (c *configMapReconciler) sync(managerRunning bool) error {
 	processedFiles := make([]string, 0, 8)
 
 	for _, cm := range list.Items {
+		if !c.selector.Matches(labels.Set(cm.ObjectMeta.Labels)) {
+			continue
+		}
+
 		for name, data := range cm.Data {
 			path := filepath.Join(c.config.BaseDir, name)
 			doWrite := false

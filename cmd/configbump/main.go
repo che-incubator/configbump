@@ -95,7 +95,13 @@ func initializeConfigMapController(labels string, baseDir string, namespace stri
 		return err
 	}
 
-	err = configmaps.New(mgr, configmaps.ConfigMapReconcilerConfig{BaseDir: baseDir, Labels: labels, OnReconcileDone: onReconcileDone, Namespace: namespace})
+	_, err = configmaps.New(mgr, configmaps.ConfigMapReconcilerConfig{
+		BaseDir:         baseDir,
+		Labels:          labels,
+		OnReconcileDone: onReconcileDone,
+		Namespace:       namespace,
+	})
+
 	if err != nil {
 		return err
 	}
