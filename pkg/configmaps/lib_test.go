@@ -269,20 +269,7 @@ func testWith(labels string, cms ...runtime.Object) (client.Client, reconcile.Re
 			return cl, nil
 		},
 		MapperProvider: func(c *rest.Config) (meta.RESTMapper, error) {
-			gv := schema.GroupVersion{
-				Group:   "",
-				Version: "v1",
-			}
-
-			gvs := make([]schema.GroupVersion, 1)
-			gvs[0] = gv
-			mapper := meta.NewDefaultRESTMapper(gvs)
-			mapper.Add(schema.GroupVersionKind{
-				Group:   "",
-				Version: "v1",
-				Kind:    "ConfigMap",
-			}, meta.RESTScopeRoot)
-
+			mapper := meta.NewDefaultRESTMapper(make([]schema.GroupVersion, 0))
 			return mapper, nil
 		},
 		NewCache: func(config *rest.Config, opts cache.Options) (cache.Cache, error) {
