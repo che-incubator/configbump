@@ -16,7 +16,7 @@ ARG GOOS=linux
 RUN apk add --no-cache ca-certificates
 RUN adduser -D -g '' appuser
 WORKDIR /go/src/github.com/che-incubator/configbump
-# copy go.mo go.sum
+# copy go.mod go.sum
 COPY go.mod go.sum ./
 # Get dependancies - will also be cached if we won't change mod/sum
 RUN go mod download && go mod verify
