@@ -22,7 +22,7 @@ ENV PATH=/opt/rh/go-toolset-1.13/root/usr/bin:$PATH
 ENV GOPATH=/go/
 USER root
 WORKDIR /go/src/github.com/che-incubator/configbump
-# copy go.mo go.sum
+# copy go.mod go.sum
 COPY go.mod go.sum ./
 # Get dependancies - will also be cached if we won't change mod/sum
 RUN go mod download && go mod verify
