@@ -11,8 +11,8 @@
 #
 
 FROM golang:1.13-alpine3.12 as builder
-ARG CGO_ENABLED=0
-ARG GOOS=linux
+ENV CGO_ENABLED=0
+ENV GOOS=linux
 RUN apk add --no-cache ca-certificates
 RUN adduser -D -g '' appuser
 WORKDIR /go/src/github.com/che-incubator/configbump
