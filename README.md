@@ -37,3 +37,106 @@ Options:
   --help, -h             display this help and exit
   --version              display version and exit
 ```
+
+## Examples
+
+An example of using Traefik with configbump as a sidecar in a single pod to enable configbump dynamically downloading configuration files to a directory that Traefik watches for configuration changes.
+
+```yaml
+# The only thing that our Pod needs is to have access to the cluster API and be able to read
+# config maps. The following service account, role and role binding show the minimum perms required:
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sa-able-to-access-k8s-api-and-read-configmaps
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: read-configmaps
+rules:
+- verbs:
+  - watch
+  - get
+  - list
+  apiGroups:
+  - ""
+  resources:
+  - configmaps
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: read-config-maps-to-sa
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: read-configmaps
+subjects:
+- kind: ServiceAccount
+  name: sa-able-to-access-k8s-api-and-read-configmaps
+---
+# This is the Pod with Traefik and configbump as a sidecar. The only things required to make
+# configbump do its job is to a) assign the proper service account to the Pod and b) connect
+# the Traefik container and configbump container using a shared emptydir volume. There is no
+# need for the volume to be persistent because configbump syncs its content with all the matching
+# configmaps.
+kind: Pod
+apiVersion: v1
+metadata:
+  name: traefik
+spec:
+  serviceAccountName: sa-able-to-access-k8s-api-and-read-configmaps
+  containers:
+  - name: traefik
+    image: traefik
+    volumeMounts:
+    - name: config
+      mountPath: /etc/traefik
+    - name: dynamic-config
+      mountPath: "/dynamic-config"
+  - name: config-map-sync
+    image: che-incubator/configbump:latest
+    env:
+    - name: CONFIG_BUMP_DIR
+      value: "/dynamic-config"
+    - name: CM_LABELS
+      value: "config-for=traefik"
+    - name: CONFIG_BUMP_NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
+    volumeMounts:
+    - name: dynamic-config
+      mountPath: "/dynamic-config"
+  volumes:
+  - name: config
+    configMap:
+      name: traefik-config
+  - name: dynamic-config
+    emptyDir: {}
+---
+
+# This is the main configuration for Traefik. We configure it to listen
+# for changes in the "/dynamic-config" directory - where we put all the
+# configuration from the config maps labeled with "config-for" label equal
+# "traefik".
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: traefik-config
+data:
+  traefik.yml: |
+    global:
+      checkNewVersion: false
+      sendAnonymousUsage: false
+    entrypoints:
+      http:
+        address: ":8080"
+      https:
+        address: ":8443"   
+    providers:
+      file:
+        directory: "/dynamic-config"
+        watch: true
+```
