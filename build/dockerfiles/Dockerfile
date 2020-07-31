@@ -56,13 +56,13 @@ ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION
 
-LABEL maintainer="Eclispe Che team" \
+LABEL maintainer="Eclipse Che team" \
   org.opencontainers.image.created=$BUILD_DATE \
   org.opencontainers.image.url="https://github.com/che-incubator/configbump" \
   org.opencontainers.image.source="https://github.com/che-incubator/configbump" \
   org.opencontainers.image.version=$VERSION \
   org.opencontainers.image.revision=$VCS_REF \
-  org.opencontainers.image.vendor="Eclispe Che team" \
+  org.opencontainers.image.vendor="Eclipse Che team" \
   org.opencontainers.image.title="ConfigBump" \
   org.opencontainers.image.description="This is a simple Kubernetes controller that is able to quickly synchronize a set of configmaps (selected using labels) to files on local filesystem." \
   org.opencontainers.image.licenses="EPL 2.0"
@@ -82,4 +82,3 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /usr/local/go/lib/time/zoneinfo.zip /usr/local/go/lib/time/zoneinfo.zip
 
 ENTRYPOINT [ "/usr/local/bin/configbump" ]
-
