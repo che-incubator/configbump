@@ -51,7 +51,7 @@ ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION
 
-LABEL maintainer="Eclispe Che team" \
+LABEL maintainer="Eclipse Che team" \
   org.opencontainers.image.created=$BUILD_DATE \
   org.opencontainers.image.url="https://github.com/che-incubator/configbump" \
   org.opencontainers.image.source="https://github.com/che-incubator/configbump" \
@@ -77,4 +77,3 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /usr/local/go/lib/time/zoneinfo.zip /usr/local/go/lib/time/zoneinfo.zip
 
 ENTRYPOINT [ "/usr/local/bin/configbump" ]
-
