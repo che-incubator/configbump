@@ -21,6 +21,11 @@ ARG BUILDPLATFORM
 RUN printf "I am running on ${BUILDPLATFORM:-linux/amd64}, building for ${TARGETPLATFORM:-linux/amd64}\n$(uname -a)\n" \
   && $(case ${TARGETPLATFORM:-linux/amd64} in \
       "linux/amd64")   echo "GOOS=linux GOARCH=amd64" > /tmp/.env                       ;; \
+      "linux/arm/v6")  echo "GOOS=linux GOARCH=arm GOARM=6" > /tmp/.env                 ;; \
+      "linux/arm/v7")  echo "GOOS=linux GOARCH=arm GOARM=7" > /tmp/.env                 ;; \
+      "linux/arm64")   echo "GOOS=linux GOARCH=arm64" > /tmp/.env                       ;; \
+      "linux/386")     echo "GOOS=linux GOARCH=386" > /tmp/.env                         ;; \
+      "linux/ppc64le") echo "GOOS=linux GOARCH=ppc64le" > /tmp/.env                     ;; \
       "linux/s390x")   echo "GOOS=linux GOARCH=s390x" > /tmp/.env                       ;; \
       *)               echo "TARGETPLATFORM ${TARGETPLATFORM} not found..." && exit 1   ;; \
     esac) \

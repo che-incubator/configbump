@@ -64,7 +64,7 @@ jobs:
           DOCKER_USERNAME=${{secrets.DOCKER_USERNAME}}
           DOCKER_IMAGE=${{secrets.DOCKER_IMAGE}}
           DOCKER_REPO=${{secrets.DOCKER_REPO}}
-          DOCKER_PLATFORMS=linux/amd64,linux/s390x
+          DOCKER_PLATFORMS=linux/amd64,linux/s390x,linux/arm64,linux/ppc64le
           VERSION=latest
 
           if [[ $GITHUB_REF == refs/tags/* ]]; then
