@@ -73,5 +73,6 @@ RUN apk --update --no-cache add \
   && rm -rf /tmp/* /var/cache/apk/*
 
 USER appuser
+COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /app/configbump /usr/local/bin/configbump
 ENTRYPOINT [ "/usr/local/bin/configbump" ]
