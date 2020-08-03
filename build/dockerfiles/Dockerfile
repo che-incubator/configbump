@@ -72,7 +72,7 @@ RUN apk --update --no-cache add \
     tzdata \
   && rm -rf /tmp/* /var/cache/apk/*
 
-USER appuser
 COPY --from=builder /etc/passwd /etc/passwd
+USER appuser
 COPY --from=builder /app/configbump /usr/local/bin/configbump
 ENTRYPOINT [ "/usr/local/bin/configbump" ]
