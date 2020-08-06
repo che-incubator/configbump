@@ -90,7 +90,7 @@ func initializeConfigMapController(labels string, baseDir string, namespace stri
 	}
 	defer ready.Unset()
 
-	mgr, err := manager.New(cfg, manager.Options{Namespace: namespace})
+	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: "0", Namespace: namespace})
 	if err != nil {
 		return err
 	}

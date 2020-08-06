@@ -56,13 +56,12 @@ metadata:
   name: read-configmaps
 rules:
 - verbs:
-  - watch
-  - get
-  - list
+  - '*'
   apiGroups:
   - ""
   resources:
   - configmaps
+  - pods
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -90,18 +89,21 @@ spec:
   containers:
   - name: traefik
     image: traefik
+    args: ["--configFile=/dynamic-config/traefik.yml"]
     volumeMounts:
-    - name: config
-      mountPath: /etc/traefik
     - name: dynamic-config
       mountPath: "/dynamic-config"
   - name: config-map-sync
-    image: che-incubator/configbump:latest
+    image: quay.io/che-incubator/configbump:latest
     env:
     - name: CONFIG_BUMP_DIR
       value: "/dynamic-config"
-    - name: CM_LABELS
+    - name: CONFIG_BUMP_LABELS
       value: "config-for=traefik"
+    - name: POD_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.name
     - name: CONFIG_BUMP_NAMESPACE
       valueFrom:
         fieldRef:
@@ -125,6 +127,8 @@ kind: ConfigMap
 apiVersion: v1
 metadata:
   name: traefik-config
+  labels:
+    config-for: traefik
 data:
   traefik.yml: |
     global:
