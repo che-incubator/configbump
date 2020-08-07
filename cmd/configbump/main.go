@@ -1,13 +1,11 @@
 package main
 
 import (
-	"context"
 	"os"
 
 	arg "github.com/alexflint/go-arg"
 	"github.com/che-incubator/configbump/pkg/configmaps"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
-	"github.com/operator-framework/operator-sdk/pkg/leader"
 	"github.com/operator-framework/operator-sdk/pkg/ready"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -77,11 +75,11 @@ func initializeConfigMapController(labels string, baseDir string, namespace stri
 			}
 		}
 	}
-
-	err = leader.Become(context.Background(), controllerName)
-	if err != nil {
-		return err
-	}
+    // require extra roles with pods
+	//err = leader.Become(context.Background(), controllerName)
+	//if err != nil {
+	//	return err
+	//}
 
 	ready := ready.NewFileReady()
 	err = ready.Set()

@@ -11,12 +11,13 @@ metadata:
   name: read-configmaps
 rules:
   - verbs:
-      - '*'
+      - watch
+      - get
+      - list
     apiGroups:
       - ""
     resources:
       - configmaps
-      - pods
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
