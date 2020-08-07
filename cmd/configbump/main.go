@@ -75,7 +75,7 @@ func initializeConfigMapController(labels string, baseDir string, namespace stri
 			}
 		}
 	}
-    // require extra roles with pods
+	// require extra roles with pods
 	//err = leader.Become(context.Background(), controllerName)
 	//if err != nil {
 	//	return err
