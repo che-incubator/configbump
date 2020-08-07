@@ -88,7 +88,7 @@ spec:
   serviceAccountName: sa-able-to-access-k8s-api-and-read-configmaps
   containers:
   - name: traefik
-    image: traefik
+    image: docker.io/traefik:v2.2.8
     args: ["--configFile=/dynamic-config/traefik.yml"]
     volumeMounts:
     - name: dynamic-config
