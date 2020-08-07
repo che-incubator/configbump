@@ -57,10 +57,6 @@ spec:
           value: "/dynamic-config"
         - name: CONFIG_BUMP_LABELS
           value: "app=che,role=gateway-config"
-        - name: POD_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
         - name: CONFIG_BUMP_NAMESPACE
           valueFrom:
             fieldRef:
