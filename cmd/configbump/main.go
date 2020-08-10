@@ -1,13 +1,11 @@
 package main
 
 import (
-	"context"
 	"os"
 
 	arg "github.com/alexflint/go-arg"
 	"github.com/che-incubator/configbump/pkg/configmaps"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
-	"github.com/operator-framework/operator-sdk/pkg/leader"
 	"github.com/operator-framework/operator-sdk/pkg/ready"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -78,11 +76,6 @@ func initializeConfigMapController(labels string, baseDir string, namespace stri
 		}
 	}
 
-	err = leader.Become(context.Background(), controllerName)
-	if err != nil {
-		return err
-	}
-
 	ready := ready.NewFileReady()
 	err = ready.Set()
 	if err != nil {
@@ -90,7 +83,7 @@ func initializeConfigMapController(labels string, baseDir string, namespace stri
 	}
 	defer ready.Unset()
 
-	mgr, err := manager.New(cfg, manager.Options{Namespace: namespace})
+	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: "0", Namespace: namespace})
 	if err != nil {
 		return err
 	}
