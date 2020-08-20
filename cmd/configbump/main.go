@@ -5,8 +5,10 @@ import (
 
 	arg "github.com/alexflint/go-arg"
 	"github.com/che-incubator/configbump/pkg/configmaps"
+	"github.com/go-logr/zapr"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"github.com/operator-framework/operator-sdk/pkg/ready"
+	"go.uber.org/zap"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -41,6 +43,13 @@ const controllerName = "config-bump"
 var log = logf.Log.WithName(controllerName)
 
 func main() {
+	zap, err := zap.NewProduction()
+	if err != nil {
+		println("Failed to initialize a zap logger.")
+		os.Exit(1)
+	}
+	logf.SetLogger(zapr.NewLogger(zap))
+
 	var opts opts
 	arg.MustParse(&opts)
 
