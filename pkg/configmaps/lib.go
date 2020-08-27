@@ -10,11 +10,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
@@ -72,16 +71,16 @@ func New(mgr manager.Manager, config ConfigMapReconcilerConfig) (controller.Cont
 		return nil, err
 	}
 
-	// register the controller with the manager
-	bld := builder.ControllerManagedBy(mgr)
-	bld.Named("config-bump")
-	bld.For(&corev1.ConfigMap{})
-	bld.Watches(&source.Kind{Type: &corev1.ConfigMap{}}, &handler.EnqueueRequestForObject{})
-	// note that we do NOT set up the filter to only included the labeled config maps.
-	// That way we would never see the events about deleted config maps or config maps from which
-	// the label has been removed
-	//bld.WithEventFilter(predicate.ResourceFilterPredicate{Selector: r.selector})
-	ctrl, err := bld.Build(r)
+	ctrl, err := controller.New("config-bump", mgr, controller.Options{Reconciler: r})
+	err = ctrl.Watch(&source.Kind{Type: &corev1.ConfigMap{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &corev1.ConfigMap{},
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -107,12 +106,12 @@ func (c *configMapReconciler) sync(managerRunning bool) error {
 	}
 
 	list := &corev1.ConfigMapList{}
-	opts := []client.ListOption{
-		client.InNamespace(c.config.Namespace),
-		client.MatchingLabelsSelector{Selector: c.selector},
+	listOptions := &client.ListOptions{
+		Namespace: c.config.Namespace,
+		LabelSelector: c.selector,
 	}
 
-	if err := cl.List(context.TODO(), list, opts...); err != nil {
+	if err := cl.List(context.TODO(), listOptions, list); err != nil {
 		return err
 	}
 
