@@ -276,7 +276,6 @@ func testWith(labels string, cms ...runtime.Object) (client.Client, reconcile.Re
 			return cache.Cache(&informertest.FakeInformers{}), nil
 		},
 		MetricsBindAddress:     "0",
-		HealthProbeBindAddress: "0",
 	}
 	mgr, err := manager.New(&cfg, opts)
 
