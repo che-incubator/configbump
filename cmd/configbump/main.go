@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/go-logr/zapr"
+	"go.uber.org/zap"
 	"os"
 
 	arg "github.com/alexflint/go-arg"
@@ -8,9 +10,9 @@ import (
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"github.com/operator-framework/operator-sdk/pkg/ready"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
 )
 
 // Opts represents the commandline arguments to the executable
@@ -41,6 +43,12 @@ const controllerName = "config-bump"
 var log = logf.Log.WithName(controllerName)
 
 func main() {
+	zap, err := zap.NewProduction()
+	if err != nil {
+		println("Failed to initialize a zap logger.")
+		os.Exit(1)
+	}
+	logf.SetLogger(zapr.NewLogger(zap))
 	var opts opts
 	arg.MustParse(&opts)
 
