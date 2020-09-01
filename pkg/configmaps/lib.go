@@ -72,10 +72,7 @@ func New(mgr manager.Manager, config ConfigMapReconcilerConfig) (controller.Cont
 	}
 
 	ctrl, err := controller.New("config-bump", mgr, controller.Options{Reconciler: r})
-	err = ctrl.Watch(&source.Kind{Type: &corev1.ConfigMap{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &corev1.ConfigMap{},
-	})
+	err = ctrl.Watch(&source.Kind{Type: &corev1.ConfigMap{}}, &handler.EnqueueRequestForObject{})
 
 	if err != nil {
 		return nil, err
