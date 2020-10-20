@@ -24,13 +24,13 @@ USER root
 WORKDIR /go/src/github.com/che-incubator/configbump
 # copy go.mod go.sum
 COPY go.mod go.sum ./
-# Get dependancies - will also be cached if we won't change mod/sum
+# Get dependencies - will also be cached if we won't change mod/sum
 RUN go mod download && go mod verify
 COPY . /go/src/github.com/che-incubator/configbump
 RUN go test -v  ./...
 RUN adduser appuser && \
-    go build -a -ldflags '-w -s' -a -installsuffix cgo -o configbump cmd/configbump/main.go
-
+    export ARCH="$(uname -m)" && if [[ ${ARCH} == "x86_64" ]]; then export ARCH="amd64"; elif [[ ${ARCH} == "aarch64" ]]; then export ARCH="arm64"; fi && \
+    GOOS=linux GOARCH=${ARCH} go build -a -ldflags '-w -s' -a -installsuffix cgo -o configbump cmd/configbump/main.go
 
 # https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8-minimal
 FROM registry.access.redhat.com/ubi8-minimal:8.2-267
