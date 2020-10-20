@@ -17,7 +17,7 @@ ENV GOOS=linux
 ENV PATH=/opt/rh/go-toolset-1.13/root/usr/bin:$PATH
 # DOWNSTREAM: use rhel8/go-toolset; no path modification needed
 # https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/rhel8/go-toolset
-# FROM registry.redhat.io/rhel8/go-toolset:1.13.4-15 as builder
+# FROM registry.redhat.io/rhel8/go-toolset:1.13.15-1 as builder
 
 ENV GOPATH=/go/
 USER root
@@ -33,7 +33,7 @@ RUN adduser appuser && \
     GOOS=linux GOARCH=${ARCH} go build -a -ldflags '-w -s' -a -installsuffix cgo -o configbump cmd/configbump/main.go
 
 # https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8-minimal
-FROM registry.access.redhat.com/ubi8-minimal:8.2-267
+FROM registry.access.redhat.com/ubi8-minimal:8.2-349
 USER appuser
 COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /go/src/github.com/che-incubator/configbump/configbump /usr/local/bin
