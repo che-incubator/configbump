@@ -9,28 +9,23 @@
 #   Red Hat, Inc. - initial API and implementation
 #
 
-# UPSTREAM: use devtools/go/-toolset-rhel7 image so we're not required to authenticate with registry.redhat.io
-# https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/devtools/go-toolset-rhel7
-FROM registry.access.redhat.com/devtools/go-toolset-rhel7:1.13.4-18 as builder
-ENV CGO_ENABLED=0
-ENV GOOS=linux
-ENV PATH=/opt/rh/go-toolset-1.13/root/usr/bin:$PATH
-# DOWNSTREAM: use rhel8/go-toolset; no path modification needed
+# UPSTREAM: use devtools/go-toolset-rhel7 image so we're not required to authenticate with registry.redhat.io
 # https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/rhel8/go-toolset
-# FROM registry.redhat.io/rhel8/go-toolset:1.13.15-1 as builder
-
-ENV GOPATH=/go/
+FROM registry.redhat.io/rhel8/go-toolset:1.13.15-1 as builder
 USER root
+ENV PATH=/opt/rh/go-toolset-1.13/root/usr/bin:$PATH \
+    GOPATH=/go/ \
+    CGO_ENABLED=0 \
+    GOOS=linux
 WORKDIR /go/src/github.com/che-incubator/configbump
-# copy go.mod go.sum
 COPY go.mod go.sum ./
-# Get dependencies - will also be cached if we won't change mod/sum
+# TODO: will this work in Brew? :: Get dependencies - will also be cached if we won't change mod/sum
 RUN go mod download && go mod verify
 COPY . /go/src/github.com/che-incubator/configbump
-RUN go test -v  ./...
 RUN adduser appuser && \
+    go test -v  ./... && \
     export ARCH="$(uname -m)" && if [[ ${ARCH} == "x86_64" ]]; then export ARCH="amd64"; elif [[ ${ARCH} == "aarch64" ]]; then export ARCH="arm64"; fi && \
-    GOOS=linux GOARCH=${ARCH} go build -a -ldflags '-w -s' -a -installsuffix cgo -o configbump cmd/configbump/main.go
+    CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} go build -a -ldflags '-w -s' -a -installsuffix cgo -o configbump cmd/configbump/main.go
 
 # https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8-minimal
 FROM registry.access.redhat.com/ubi8-minimal:8.2-349
