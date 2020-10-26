@@ -1,4 +1,5 @@
 #!/bin/bash
+set -xe
 
 # Copyright (c) 2020 Red Hat, Inc.
 # This program and the accompanying materials are made
@@ -22,9 +23,9 @@ rm -fr ${TMPDIR} ${WORKSPACE}/asset-configbump-*.tar.gz
 
 for d in usr/local/bin/configbump etc/passwd; do
     mkdir -p ${TMPDIR}/${d%/*}
-    ${PODMAN} run --rm --entrypoint cat $TMPIMG ${d} > ${TMPDIR}/${d}
+    ${PODMAN} run --rm --entrypoint cat $TMPIMG /${d} > ${TMPDIR}/${d}
 done
-# tree ${TMPDIR}
+tree ${TMPDIR}
 
 pushd ${TMPDIR} >/dev/null || exit 1
     tar cvzf "${WORKSPACE}/asset-configbump-$(uname -m).tar.gz" ./
