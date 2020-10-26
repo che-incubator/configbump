@@ -19,7 +19,6 @@ ENV PATH=/opt/rh/go-toolset-1.13/root/usr/bin:$PATH \
     GOOS=linux
 WORKDIR /go/src/github.com/che-incubator/configbump
 COPY go.mod go.sum ./
-# TODO: will this work in Brew? :: Get dependencies - will also be cached if we won't change mod/sum
 RUN go mod download && go mod verify
 COPY . /go/src/github.com/che-incubator/configbump
 RUN adduser appuser && \
@@ -27,11 +26,6 @@ RUN adduser appuser && \
     export ARCH="$(uname -m)" && if [[ ${ARCH} == "x86_64" ]]; then export ARCH="amd64"; elif [[ ${ARCH} == "aarch64" ]]; then export ARCH="arm64"; fi && \
     CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} go build -a -ldflags '-w -s' -a -installsuffix cgo -o configbump cmd/configbump/main.go
 
-# https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8-minimal
-FROM registry.access.redhat.com/ubi8-minimal:8.2-349
-USER appuser
-COPY --from=builder /etc/passwd /etc/passwd
-COPY --from=builder /go/src/github.com/che-incubator/configbump/configbump /usr/local/bin
-ENTRYPOINT ["configbump"]
-
-# append Brew metadata here
+# now collect assets into a tarball, and in brew.Dockerfile, extract and use them
+# if doing steps locally, run ./build/dockerfiles/rhel.Dockerfile.extract.assets.sh
+# if running in Jenkins, see https://github.com/redhat-developer/codeready-workspaces/tree/crw-2.5-rhel-8/dependencies/configbump/Jenkinsfile (or newer branch) for script
