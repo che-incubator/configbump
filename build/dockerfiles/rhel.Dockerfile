@@ -9,34 +9,24 @@
 #   Red Hat, Inc. - initial API and implementation
 #
 
-# UPSTREAM: use devtools/go/-toolset-rhel7 image so we're not required to authenticate with registry.redhat.io
-# https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/devtools/go-toolset-rhel7
-FROM registry.access.redhat.com/devtools/go-toolset-rhel7:1.13.4-18 as builder
-ENV CGO_ENABLED=0
-ENV GOOS=linux
-ENV PATH=/opt/rh/go-toolset-1.13/root/usr/bin:$PATH
-# DOWNSTREAM: use rhel8/go-toolset; no path modification needed
+# UPSTREAM: use devtools/go-toolset-rhel7 image so we're not required to authenticate with registry.redhat.io
 # https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/rhel8/go-toolset
-# FROM registry.redhat.io/rhel8/go-toolset:1.13.4-15 as builder
-
-ENV GOPATH=/go/
+FROM registry.redhat.io/rhel8/go-toolset:1.13.15-1 as builder
 USER root
+ENV PATH=/opt/rh/go-toolset-1.13/root/usr/bin:$PATH \
+    GOPATH=/go/ \
+    CGO_ENABLED=0 \
+    GOOS=linux
 WORKDIR /go/src/github.com/che-incubator/configbump
-# copy go.mod go.sum
 COPY go.mod go.sum ./
-# Get dependancies - will also be cached if we won't change mod/sum
 RUN go mod download && go mod verify
 COPY . /go/src/github.com/che-incubator/configbump
-RUN go test -v  ./...
 RUN adduser appuser && \
-    go build -a -ldflags '-w -s' -a -installsuffix cgo -o configbump cmd/configbump/main.go
+    go test -v  ./... && \
+    export ARCH="$(uname -m)" && if [[ ${ARCH} == "x86_64" ]]; then export ARCH="amd64"; elif [[ ${ARCH} == "aarch64" ]]; then export ARCH="arm64"; fi && \
+    CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} go build -a -ldflags '-w -s' -a -installsuffix cgo -o configbump cmd/configbump/main.go && \
+    cp /go/src/github.com/che-incubator/configbump/configbump /usr/local/bin/configbump
 
-
-# https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8-minimal
-FROM registry.access.redhat.com/ubi8-minimal:8.2-267
-USER appuser
-COPY --from=builder /etc/passwd /etc/passwd
-COPY --from=builder /go/src/github.com/che-incubator/configbump/configbump /usr/local/bin
-ENTRYPOINT ["configbump"]
-
-# append Brew metadata here
+# now collect assets into a tarball, and in brew.Dockerfile, extract and use them
+# if doing steps locally, run ./build/dockerfiles/rhel.Dockerfile.extract.assets.sh
+# if running in Jenkins, see https://github.com/redhat-developer/codeready-workspaces/tree/crw-2.5-rhel-8/dependencies/configbump/Jenkinsfile (or newer branch) for script
