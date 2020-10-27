@@ -25,7 +25,6 @@ for d in usr/local/bin/configbump etc/passwd; do
     mkdir -p ${TMPDIR}/${d%/*}
     ${PODMAN} run --rm --entrypoint cat $TMPIMG /${d} > ${TMPDIR}/${d}
 done
-tree ${TMPDIR}
 
 pushd ${TMPDIR} >/dev/null || exit 1
     tar cvzf "${WORKSPACE}/asset-configbump-$(uname -m).tar.gz" ./

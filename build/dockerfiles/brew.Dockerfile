@@ -14,10 +14,15 @@
 
 # https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8-minimal
 FROM ubi8-minimal:8.2-349
-USER appuser
 COPY asset-*.tar.gz /tmp/assets/
-RUN tar xzf /tmp/asset/asset-configbump-$(uname -m).tar.gz -C / && \
-    rm -fr /tmp/assets/
+RUN microdnf -y install tar gzip shadow-utils && \
+    adduser appuser && \
+    tar xzf /tmp/assets/asset-configbump-$(uname -m).tar.gz -C / && \
+    rm -fr /tmp/assets/ && \
+    chmod 755 /usr/local/bin/configbump && \
+    microdnf -y remove tar gzip shadow-utils && \
+    echo "Installed Packages" && rpm -qa | sort -V && echo "End Of Installed Packages"
+USER appuser
 ENTRYPOINT ["configbump"]
 
 # append Brew metadata here
