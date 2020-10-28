@@ -13,22 +13,29 @@ set -xe
 #
 # script to build rhel.Dockerfile and extract relevant assets for reuse in Brew
 
-TMPIMG=configbump:local
+ARCH=$(uname -m)
+TMPIMG=configbump:tmp-${ARCH}
 PODMAN=podman; if [[ ! $(which podman) ]]; then PODMAN=docker;fi
+TMPDIR=$(mktemp -d)
+
+# delete any old assets
+rm -fr ${TMPDIR} ${WORKSPACE}/asset-configbump-${ARCH}.tar.gz
+
+# build the image
 ${PODMAN} build . -f build/dockerfiles/rhel.Dockerfile -t ${TMPIMG}
 
-# create asset-* files
-TMPDIR=$(mktemp -d)
-rm -fr ${TMPDIR} ${WORKSPACE}/asset-configbump-*.tar.gz
-
-for d in usr/local/bin/configbump etc/passwd; do
+# extract files
+# shellcheck disable=SC2043
+for d in usr/local/bin/configbump; do 
     mkdir -p ${TMPDIR}/${d%/*}
     ${PODMAN} run --rm --entrypoint cat $TMPIMG /${d} > ${TMPDIR}/${d}
 done
 
+# create asset-* file
 pushd ${TMPDIR} >/dev/null || exit 1
-    tar cvzf "${WORKSPACE}/asset-configbump-$(uname -m).tar.gz" ./
+    tar cvzf "${WORKSPACE}/asset-configbump-${ARCH}.tar.gz" ./
 popd >/dev/null || exit 1
 
+ #cleanup
 ${PODMAN} rmi -f ${TMPIMG}
 rm -fr ${TMPDIR}
