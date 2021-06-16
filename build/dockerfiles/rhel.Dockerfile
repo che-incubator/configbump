@@ -9,12 +9,11 @@
 #   Red Hat, Inc. - initial API and implementation
 #
 
-# UPSTREAM: use devtools/go-toolset-rhel7 image so we're not required to authenticate with registry.redhat.io
-# https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/devtools/go-toolset-rhel7
-FROM registry.access.redhat.com/devtools/go-toolset-rhel7:1.13.15-4 as builder
-# remember to update path when golang version changes (1.13 -> 1.14)
-ENV PATH=/opt/rh/go-toolset-1.13/root/usr/bin:$PATH \
-    GOPATH=/go/ \
+# https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8-minimal
+FROM registry.access.redhat.com/ubi8-minimal:8.4-200.1622548483 as builder
+RUN microdnf install -y golang
+
+ENV GOPATH=/go/ \
     CGO_ENABLED=0 \
     GOOS=linux
 USER root
