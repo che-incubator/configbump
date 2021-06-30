@@ -32,7 +32,8 @@ RUN adduser appuser && \
     CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} go build -a -ldflags '-w -s' -a -installsuffix cgo -o configbump cmd/configbump/main.go
     
 # https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8-minimal
-FROM registry.access.redhat.com/ubi8-minimal:8.4-205
+FROM registry.access.redhat.com/ubi8/ubi-micro:8.4-72
 USER appuser
+COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /app/configbump /usr/local/bin/configbump
 ENTRYPOINT [ "/usr/local/bin/configbump" ]
