@@ -24,7 +24,6 @@ jobs:
         run: |
           git config --global user.name "Mykhailo Kuznietsov"
           git config --global user.email "mkuznets@redhat.com"
-          export GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
           curl https://raw.githubusercontent.com/eclipse-che/che-release/main/make-branch.sh | bash -s -- \
           --branch ${{ github.event.inputs.branch }} \
           --branchfrom ${{ github.event.inputs.branchfrom }} \
