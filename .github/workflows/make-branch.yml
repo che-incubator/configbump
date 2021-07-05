@@ -28,4 +28,5 @@ jobs:
           curl https://raw.githubusercontent.com/eclipse-che/che-release/main/make-branch.sh | bash -s -- \
           --branch ${{ github.event.inputs.branch }} \
           --branchfrom ${{ github.event.inputs.branchfrom }} \
-          --repo "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"
+          --repo "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" \
+          ${{ github.event.inputs.forceflag }}
