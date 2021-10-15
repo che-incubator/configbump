@@ -63,7 +63,7 @@ jobs:
         name: Go test
         run: go test -v  ./...
   docker:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: go
     steps:
       -
