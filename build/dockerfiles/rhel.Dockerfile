@@ -13,7 +13,7 @@
 # so we can use asset-*.tar.gz files for all arches in brew.Dockerfile
 
 # https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8/go-toolset
-FROM registry.access.redhat.com/ubi8/go-toolset:1.15.14-3 as builder
+FROM registry.access.redhat.com/ubi8/go-toolset:1.15.14-18 as builder
 ENV GOPATH=/go/ \
     CGO_ENABLED=0 \
     GOOS=linux
@@ -21,13 +21,13 @@ USER root
 WORKDIR /app
 ENV GO111MODULE on
 # ENV GOPROXY https://goproxy.io
-COPY go.mod .
-COPY go.sum .
+COPY go.* .
 RUN go mod download && go mod verify
 COPY . ./
 
-RUN adduser appuser && \
-    go test -v  ./... && \
+# creating user sometimes fails 
+RUN rm -rf /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock && adduser appuser
+RUN go test -v  ./... && \
     export ARCH="$(uname -m)" && if [[ ${ARCH} == "x86_64" ]]; then export ARCH="amd64"; elif [[ ${ARCH} == "aarch64" ]]; then export ARCH="arm64"; fi && \
     CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} go build -a -ldflags '-w -s' -a -installsuffix cgo -o configbump cmd/configbump/main.go
     
