@@ -13,7 +13,7 @@
 # so we can use asset-*.tar.gz files for all arches in brew.Dockerfile
 
 # https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8/go-toolset
-FROM registry.access.redhat.com/ubi8/go-toolset:1.16.12-10 as builder
+FROM registry.access.redhat.com/ubi8/go-toolset:1.17.7-13 as builder
 ENV GOPATH=/go/ \
     CGO_ENABLED=0 \
     GOOS=linux
@@ -32,7 +32,7 @@ RUN adduser appuser && \
     CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} go build -a -ldflags '-w -s' -a -installsuffix cgo -o configbump cmd/configbump/main.go
     
 # https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8/ubi-micro
-FROM registry.access.redhat.com/ubi8/ubi-micro:8.5-836
+FROM registry.access.redhat.com/ubi8/ubi-micro:8.6-285
 COPY --from=builder /etc/passwd /etc/passwd
 USER appuser
 COPY --from=builder /app/configbump /usr/local/bin/configbump
