@@ -13,7 +13,7 @@
 # so we can use asset-*.tar.gz files for all arches in brew.Dockerfile
 
 # https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8/go-toolset
-FROM registry.access.redhat.com/ubi8/go-toolset:1.17.7-13.1655148239 as builder
+FROM registry.access.redhat.com/ubi8/go-toolset:1.17.10-4 as builder
 ENV GOPATH=/go/ \
     CGO_ENABLED=0 \
     GOOS=linux
