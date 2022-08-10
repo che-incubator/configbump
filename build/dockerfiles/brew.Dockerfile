@@ -11,7 +11,7 @@
 
 # this container build continues from rhel.Dockerfile
 
-# https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8-minimal
+# https://registry.access.redhat.com/ubi8-minimal
 FROM ubi8-minimal:8.6-902
 
 # cachito
