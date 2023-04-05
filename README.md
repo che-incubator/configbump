@@ -9,6 +9,9 @@ The combination of the two capabilities can be used to enable dynamic reconfigur
 
 This makes it possible to for example use this tool as a sidecar to a container. As long as they share (parts of) the filesystem, this tool can supply the configuration to the program in the other container. If the two containers also share the process namespace, this tool can also be used for the signalling of the other process.
 
+
+
+
 Another approach to use this tool is to create a custom image that would build on top of the original one and start both the original program and configbump.
 
 ## Current State
