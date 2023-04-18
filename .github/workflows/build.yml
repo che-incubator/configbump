@@ -41,7 +41,7 @@ jobs:
         id: prepare
         run: |
           if [[ $GITHUB_REF == refs/tags/* ]]; then
-            echo ::set-output name=tag_name::${GITHUB_REF#refs/tags/}
+            echo "tag_name=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
           fi
       -
         name: Set up Go
@@ -87,21 +87,21 @@ jobs:
           TAGS="--tag ${DOCKER_IMAGE}:${VERSION}"
           TAGS_RHEL="--tag ${DOCKER_IMAGE}:${VERSION}-rhel"
 
-          echo ::set-output name=DOCKERHUB_USERNAME::${DOCKERHUB_USERNAME}
-          echo ::set-output name=docker_repo::${DOCKER_REPO}
-          echo ::set-output name=docker_image::${DOCKER_IMAGE}
-          echo ::set-output name=version::${VERSION}
-          echo ::set-output name=buildx_args::--platform ${DOCKER_PLATFORMS} \
+          echo "DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME}"  >> $GITHUB_OUTPUT
+          echo "docker_repo=${DOCKER_REPO}"  >> $GITHUB_OUTPUT
+          echo "docker_image=${DOCKER_IMAGE}" >> $GITHUB_OUTPUT
+          echo "version=${VERSION}"  >> $GITHUB_OUTPUT
+          echo "buildx_args=--platform ${DOCKER_PLATFORMS} \
             --build-arg VERSION=${VERSION} \
             --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
             --build-arg VCS_REF=${GITHUB_SHA::8} \
-            ${TAGS} --file build/dockerfiles/Dockerfile .
+            ${TAGS} --file build/dockerfiles/Dockerfile ."  >> $GITHUB_OUTPUT
 
-          echo ::set-output name=buildx_args_rhel::--platform linux/amd64 \
+          echo "buildx_args_rhel=--platform linux/amd64 \
             --build-arg VERSION=${VERSION} \
             --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
             --build-arg VCS_REF=${GITHUB_SHA::8} \
-            ${TAGS_RHEL} --file build/dockerfiles/rhel.Dockerfile .
+            ${TAGS_RHEL} --file build/dockerfiles/rhel.Dockerfile ."  >> $GITHUB_OUTPUT
       -
         name: Set up Docker Buildx
         uses: crazy-max/ghaction-docker-buildx@v3.2.0
