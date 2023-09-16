@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019-2023 Red Hat, Inc.
+# Copyright (c) 2023 Red Hat, Inc.
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
 # which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -67,7 +67,7 @@ jobs:
           git config --global user.name "Mykhailo Kuznietsov"
           git config --global user.email "mkuznets@redhat.com"
           git config --global pull.rebase true
-          export GITHUB_TOKEN=${{ secrets.CHE_BOT_GITHUB_TOKEN }}
+          export GITHUB_TOKEN=${{ secrets.CHE_INCUBATOR_BOT_GITHUB_TOKEN }}
           NO_COMMIT=${{ github.event.inputs.noCommit}}
           if [[ $NO_COMMIT == "true" ]]; then
             NO_COMMIT="--no-commit"
@@ -75,17 +75,17 @@ jobs:
             NO_COMMIT=
           fi
           /bin/bash make-release.sh --version ${{ github.event.inputs.version }} --trigger-release $NO_COMMIT
-      - name: Create failure MM message
-        if: ${{ failure() }}
-        run: |
-          echo "{\"text\":\":no_entry_sign: Che Configbump ${{ github.event.inputs.version }} release has failed: https://github.com/che-incubator/configbump/actions/workflows/release.yml\"}" > mattermost.json
-      - name: Create success MM message
-        run: |
-          echo "{\"text\":\":white_check_mark: Che Configbump ${{ github.event.inputs.version }} has been released: quay.io/che-incubator/configbump:${{ github.event.inputs.version }}\"}" > mattermost.json
-      - name: Send MM message
-        if: ${{ success() }} || ${{ failure() }}
-        uses: mattermost/action-mattermost-notify@1.1.0
-        env:
-          MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
-          MATTERMOST_CHANNEL: eclipse-che-releases
-          MATTERMOST_USERNAME: che-bot
+      # - name: Create failure MM message
+      #   if: ${{ failure() }}
+      #   run: |
+      #     echo "{\"text\":\":no_entry_sign: Che Configbump ${{ github.event.inputs.version }} release has failed: https://github.com/che-incubator/configbump/actions/workflows/release.yml\"}" > mattermost.json
+      # - name: Create success MM message
+      #   run: |
+      #     echo "{\"text\":\":white_check_mark: Che Configbump ${{ github.event.inputs.version }} has been released: quay.io/che-incubator/configbump:${{ github.event.inputs.version }}\"}" > mattermost.json
+      # - name: Send MM message
+      #   if: ${{ success() }} || ${{ failure() }}
+      #   uses: mattermost/action-mattermost-notify@1.1.0
+      #   env:
+      #     MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
+      #     MATTERMOST_CHANNEL: eclipse-che-releases
+      #     MATTERMOST_USERNAME: che-bot

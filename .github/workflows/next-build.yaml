@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019-2023 Red Hat, Inc.
+# Copyright (c) 2023 Red Hat, Inc.
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
 # which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -36,12 +36,12 @@ jobs:
     - id: vars
       shell: bash
       run: |
-        echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+        echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
     - name: Build and push both short SHA tag and next tag
       uses: docker/build-push-action@v3
       with:
         file: build/dockerfiles/Dockerfile
-        platforms: linux/amd64,linux/ppc64le,linux/arm64
+        platforms: linux/amd64,linux/arm64
         push: true
         tags: |
           quay.io/che-incubator/configbump:next
