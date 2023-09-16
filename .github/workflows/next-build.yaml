@@ -36,7 +36,7 @@ jobs:
     - id: vars
       shell: bash
       run: |
-        echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+        echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
     - name: Build and push both short SHA tag and next tag
       uses: docker/build-push-action@v3
       with:
