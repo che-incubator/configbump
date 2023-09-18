@@ -65,7 +65,7 @@ bump_version () {
 usage ()
 {
   echo "Usage: $0 --version [VERSION TO RELEASE] [--tag-release]"
-  echo "Example: $0 --version 7.75.0 --tag-release"; echo
+  echo "Example: $0 --version 7.74.0 --tag-release"; echo
 }
 
 if [[ ! ${VERSION} ]]; then
