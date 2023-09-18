@@ -28,6 +28,25 @@ while [[ "$#" -gt 0 ]]; do
   shift 1
 done
 
+sed_in_place() {
+    SHORT_UNAME=$(uname -s)
+  if [ "$(uname)" == "Darwin" ]; then
+    sed -i '' "$@"
+  elif [ "${SHORT_UNAME:0:5}" == "Linux" ]; then
+    sed -i "$@"
+  fi
+}
+
+# search for occurrences of the old version in VERSION file and update to the new version
+function update_versioned_files() {
+  local VER=$1
+  OLD_VER=$(cat VERSION); OLD_VER=${OLD_VER%-*}
+  for file in README.md cmd/configbump/main.go; do
+    sed_in_place -r -e "s@${OLD_VER}@${VER}@g" $file
+  done
+  echo "${VER}" > VERSION
+}
+
 bump_version () {
   CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
@@ -37,10 +56,10 @@ bump_version () {
   git checkout "${BUMP_BRANCH}"
 
   echo "Updating project version to ${NEXT_VERSION}"
-  update_pkgs_versions $NEXT_VERSION
+  update_versioned_files $NEXT_VERSION
 
   if [[ ${NOCOMMIT} -eq 0 ]]; then
-    COMMIT_MSG="chore: Bump to ${NEXT_VERSION} in ${BUMP_BRANCH}"
+    COMMIT_MSG="chore: release: bump to ${NEXT_VERSION} in ${BUMP_BRANCH}"
     git commit -asm "${COMMIT_MSG}"
     git pull origin "${BUMP_BRANCH}"
 
@@ -65,7 +84,7 @@ bump_version () {
 usage ()
 {
   echo "Usage: $0 --version [VERSION TO RELEASE] [--tag-release]"
-  echo "Example: $0 --version 7.74.0 --tag-release"; echo
+  echo "Example: $0 --version 7.75.0 --tag-release"; echo
 }
 
 if [[ ! ${VERSION} ]]; then
@@ -124,10 +143,10 @@ git checkout "${BASEBRANCH}"
 if [[ "${BASEBRANCH}" != "${BRANCH}" ]]; then
   # bump the y digit, if it is a major release
   [[ $BRANCH =~ ^([0-9]+)\.([0-9]+)\.x ]] && BASE=${BASH_REMATCH[1]}; NEXT=${BASH_REMATCH[2]}; (( NEXT=NEXT+1 )) # for BRANCH=7.10.x, get BASE=7, NEXT=11
-  NEXT_VERSION_Y="${BASE}.${NEXT}.0-next"
+  NEXT_VERSION_Y="${BASE}.${NEXT}.0"
   bump_version "${NEXT_VERSION_Y}" "${BASEBRANCH}"
 fi
 # bump the z digit
 [[ $VERSION =~ ^([0-9]+)\.([0-9]+)\.([0-9]+) ]] && BASE="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"; NEXT="${BASH_REMATCH[3]}"; (( NEXT=NEXT+1 )) # for VERSION=7.7.1, get BASE=7.7, NEXT=2
-NEXT_VERSION_Z="${BASE}.${NEXT}-next"
+NEXT_VERSION_Z="${BASE}.${NEXT}"
 bump_version "${NEXT_VERSION_Z}" "${BRANCH}"
