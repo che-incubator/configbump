@@ -42,9 +42,9 @@ function update_versioned_files() {
   local VER=$1
   OLD_VER=$(cat VERSION); OLD_VER=${OLD_VER%-*}
   for file in README.md cmd/configbump/main.go; do
-    sed_in_place -e "s@${OLD_VER}@${VER}@g" $file
+    sed_in_place -r -e "s@${OLD_VER}@${VER}@g" $file
   done
-  echo "${VER}-next" > VERSION
+  echo "${VER}" > VERSION
 }
 
 bump_version () {
@@ -143,10 +143,10 @@ git checkout "${BASEBRANCH}"
 if [[ "${BASEBRANCH}" != "${BRANCH}" ]]; then
   # bump the y digit, if it is a major release
   [[ $BRANCH =~ ^([0-9]+)\.([0-9]+)\.x ]] && BASE=${BASH_REMATCH[1]}; NEXT=${BASH_REMATCH[2]}; (( NEXT=NEXT+1 )) # for BRANCH=7.10.x, get BASE=7, NEXT=11
-  NEXT_VERSION_Y="${BASE}.${NEXT}.0-next"
+  NEXT_VERSION_Y="${BASE}.${NEXT}.0"
   bump_version "${NEXT_VERSION_Y}" "${BASEBRANCH}"
 fi
 # bump the z digit
 [[ $VERSION =~ ^([0-9]+)\.([0-9]+)\.([0-9]+) ]] && BASE="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"; NEXT="${BASH_REMATCH[3]}"; (( NEXT=NEXT+1 )) # for VERSION=7.7.1, get BASE=7.7, NEXT=2
-NEXT_VERSION_Z="${BASE}.${NEXT}-next"
+NEXT_VERSION_Z="${BASE}.${NEXT}"
 bump_version "${NEXT_VERSION_Z}" "${BRANCH}"
