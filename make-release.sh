@@ -65,7 +65,7 @@ bump_version () {
 usage ()
 {
   echo "Usage: $0 --version [VERSION TO RELEASE] [--tag-release]"
-  echo "Example: $0 --version 7.75.0 --tag-release"; echo
+  echo "Example: $0 --version 7.74.0 --tag-release"; echo
 }
 
 if [[ ! ${VERSION} ]]; then
@@ -96,6 +96,7 @@ if [[ "${BASEBRANCH}" != "${BRANCH}" ]]; then
 fi
 
 set -e
+set -x
 
 # change VERSION file
 echo "${VERSION}" > VERSION
@@ -103,7 +104,8 @@ echo "${VERSION}" > VERSION
 # commit change into branch
 if [[ ${NOCOMMIT} -eq 0 ]]; then
   COMMIT_MSG="chore: release: bump to ${VERSION} in ${BRANCH}"
-  git commit -asm "${COMMIT_MSG}" VERSION
+  git status -s || true
+  git commit -asm "${COMMIT_MSG}" || git diff || true
   git pull origin "${BRANCH}"
   git push origin "${BRANCH}"
 fi
