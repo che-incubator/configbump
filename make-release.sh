@@ -59,7 +59,7 @@ bump_version () {
   update_versioned_files $NEXT_VERSION
 
   if [[ ${NOCOMMIT} -eq 0 ]]; then
-    COMMIT_MSG="chore: Bump to ${NEXT_VERSION} in ${BUMP_BRANCH}"
+    COMMIT_MSG="chore: release: bump to ${NEXT_VERSION} in ${BUMP_BRANCH}"
     git commit -asm "${COMMIT_MSG}"
     git pull origin "${BUMP_BRANCH}"
 
