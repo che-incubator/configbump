@@ -28,6 +28,25 @@ while [[ "$#" -gt 0 ]]; do
   shift 1
 done
 
+sed_in_place() {
+    SHORT_UNAME=$(uname -s)
+  if [ "$(uname)" == "Darwin" ]; then
+    sed -i '' "$@"
+  elif [ "${SHORT_UNAME:0:5}" == "Linux" ]; then
+    sed -i "$@"
+  fi
+}
+
+# search for occurrences of the old version in VERSION file and update to the new version
+function update_versioned_files() {
+  local VER=$1
+  OLD_VER=$(cat VERSION); OLD_VER=${OLD_VER%-*}
+  for file in README.md cmd/configbump/main.go; do
+    sed_in_place -e "s@${OLD_VER}@${VER}@g" $file
+  done
+  echo "${VER}-next" > VERSION
+}
+
 bump_version () {
   CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
@@ -37,7 +56,7 @@ bump_version () {
   git checkout "${BUMP_BRANCH}"
 
   echo "Updating project version to ${NEXT_VERSION}"
-  update_pkgs_versions $NEXT_VERSION
+  update_versioned_files $NEXT_VERSION
 
   if [[ ${NOCOMMIT} -eq 0 ]]; then
     COMMIT_MSG="chore: Bump to ${NEXT_VERSION} in ${BUMP_BRANCH}"
