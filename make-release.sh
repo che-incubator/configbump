@@ -28,16 +28,6 @@ while [[ "$#" -gt 0 ]]; do
   shift 1
 done
 
-sed_in_place() {
-    SHORT_UNAME=$(uname -s)
-  if [ "$(uname)" == "Darwin" ]; then
-    sed -i '' "$@"
-  elif [ "${SHORT_UNAME:0:5}" == "Linux" ]; then
-    sed -i "$@"
-  fi
-}
-
-
 bump_version () {
   CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
