@@ -30,7 +30,7 @@ RUN export ARCH="$(uname -m)" && if [[ ${ARCH} == "x86_64" ]]; then export ARCH=
     chmod 755 /usr/local/bin/configbump
 
 # https://registry.access.redhat.com/ubi8-minimal
-FROM registry.access.redhat.com/ubi8-minimal:8.8-1037 as runtime
+FROM registry.access.redhat.com/ubi8-minimal:8.8-1072 as runtime
 #hadolint ignore=DL4006
 RUN microdnf -y install shadow-utils && \
     adduser appuser && \
