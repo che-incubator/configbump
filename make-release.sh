@@ -59,7 +59,7 @@ bump_version () {
   update_versioned_files $NEXT_VERSION
 
   if [[ ${NOCOMMIT} -eq 0 ]]; then
-    COMMIT_MSG="chore: Bump to ${NEXT_VERSION} in ${BUMP_BRANCH}"
+    COMMIT_MSG="chore: release: bump to ${NEXT_VERSION} in ${BUMP_BRANCH}"
     git commit -asm "${COMMIT_MSG}"
     git pull origin "${BUMP_BRANCH}"
 
@@ -84,7 +84,7 @@ bump_version () {
 usage ()
 {
   echo "Usage: $0 --version [VERSION TO RELEASE] [--tag-release]"
-  echo "Example: $0 --version 7.74.0 --tag-release"; echo
+  echo "Example: $0 --version 7.75.0 --tag-release"; echo
 }
 
 if [[ ! ${VERSION} ]]; then
