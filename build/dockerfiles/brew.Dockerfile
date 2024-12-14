@@ -12,7 +12,7 @@
 # for a local build, see rhel.Dockerfile
 
 # https://registry.access.redhat.com/ubi8/go-toolset
-FROM registry.access.redhat.com/ubi8/go-toolset:1.21.13-1 as builder
+FROM registry.access.redhat.com/ubi8/go-toolset:1.22.7-5 as builder
 USER 0
 ENV GOPATH=/go/ \
     CGO_ENABLED=1
