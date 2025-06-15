@@ -50,3 +50,6 @@ kubectl apply -f deploy_example.yaml
 
 "Che" is a trademark of the Eclipse Foundation.
 
+## Builds
+
+- [![Release Che Configbump](https://github.com/che-incubator/configbump/actions/workflows/release.yml/badge.svg)](https://github.com/che-incubator/configbump/actions/workflows/release.yml)
