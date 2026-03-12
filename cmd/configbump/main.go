@@ -1,18 +1,21 @@
 package main
 
 import (
-	"github.com/go-logr/zapr"
-	"go.uber.org/zap"
+	"context"
 	"os"
 
 	arg "github.com/alexflint/go-arg"
 	"github.com/che-incubator/configbump/pkg/configmaps"
-	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
-	"github.com/operator-framework/operator-sdk/pkg/ready"
+	"github.com/go-logr/zapr"
+	"go.uber.org/zap"
+
+	// controller-runtime imports
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 // Opts represents the commandline arguments to the executable
@@ -43,6 +46,9 @@ const controllerName = "config-bump"
 var log = logf.Log.WithName(controllerName)
 
 func main() {
+	// Setup signal handler to gracefully shut down the manager
+	ctx := signals.SetupSignalHandler()
+
 	zap, err := zap.NewProduction()
 	if err != nil {
 		println("Failed to initialize a zap logger.")
@@ -61,51 +67,45 @@ func main() {
 
 	// once process signalling is implemented, we can call:
 	// initializeConfigMapController(opts.Labels, opts.Dir, b.Bump)
-	if err := initializeConfigMapController(opts.Labels, opts.Dir, opts.Namespace, func() error { return nil }); err != nil {
+	if err := initializeConfigMapController(ctx, opts.Labels, opts.Dir, opts.Namespace, func() error { return nil }); err != nil {
 		log.Error(err, "Could not initialize the config map sync controller")
 		os.Exit(1)
 	}
 }
 
-func initializeConfigMapController(labels string, baseDir string, namespace string, onReconcileDone func() error) error {
+func initializeConfigMapController(ctx context.Context, labels string, baseDir string, namespace string, onReconcileDone func() error) error {
 	// Get a config to talk to the apiserver
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return err
 	}
 
+	// If namespace is not provided via arguments, try to get it from the environment.
+	// If it remains empty, the manager will watch all namespaces.
 	if namespace == "" {
-		namespace, err = k8sutil.GetWatchNamespace()
-		if err != nil {
-			namespace, err = k8sutil.GetOperatorNamespace()
-			if err != nil {
-				return err
-			}
+		if watchNs, found := os.LookupEnv("WATCH_NAMESPACE"); found {
+			namespace = watchNs
 		}
 	}
 
-	ready := ready.NewFileReady()
-	err = ready.Set()
-	if err != nil {
-		return err
-	}
-	defer ready.Unset()
-
-	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: "0", Namespace: namespace})
+	mgr, err := manager.New(cfg, manager.Options{
+		Metrics: metricsserver.Options{
+			BindAddress:   "0",
+		},
+	})
 	if err != nil {
 		return err
 	}
 
-	_, err = configmaps.New(mgr, configmaps.ConfigMapReconcilerConfig{
+	configmapReconciler, err := configmaps.New(mgr, configmaps.ConfigMapReconcilerConfig{
 		BaseDir:         baseDir,
 		Labels:          labels,
 		OnReconcileDone: onReconcileDone,
 		Namespace:       namespace,
 	})
 
-	if err != nil {
-		return err
+	if err = configmapReconciler.SetupWithManager(mgr); err != nil {
+		os.Exit(1)
 	}
-
-	return mgr.Start(signals.SetupSignalHandler())
+	return mgr.Start(ctrl.SetupSignalHandler())
 }
