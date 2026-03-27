@@ -1,15 +1,14 @@
 package configmaps
 
 import (
-	"io/ioutil"
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/meta"
+	// "k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -36,6 +35,8 @@ func TestMain(m *testing.M) {
 }
 
 func TestCreatesFiles(t *testing.T) {
+	ctx := context.Background()
+
 	cm := &corev1.ConfigMap{}
 	cm.ObjectMeta.Name = "test"
 	cm.Data = make(map[string]string)
@@ -53,9 +54,9 @@ func TestCreatesFiles(t *testing.T) {
 			Namespace: cm.ObjectMeta.Namespace,
 		},
 	}
-	ctrl.Reconcile(req)
+	ctrl.Reconcile(ctx, req)
 
-	files, err := ioutil.ReadDir(state.workDir)
+	files, err := os.ReadDir(state.workDir)
 	if err != nil {
 		t.Fatalf("Failed to read the sync dir. %s", err)
 	}
@@ -69,12 +70,12 @@ func TestCreatesFiles(t *testing.T) {
 
 	for _, f := range files {
 		if f.Name() == "created1.txt" {
-			contents, err := ioutil.ReadFile(filepath.Join(state.workDir, f.Name()))
+			contents, err := os.ReadFile(filepath.Join(state.workDir, f.Name()))
 			if err == nil && string(contents) == "data1" {
 				foundCreated1 = true
 			}
 		} else if f.Name() == "created2.txt" {
-			contents, err := ioutil.ReadFile(filepath.Join(state.workDir, f.Name()))
+			contents, err := os.ReadFile(filepath.Join(state.workDir, f.Name()))
 			if err == nil && string(contents) == "data2" {
 				foundCreated2 = true
 			}
@@ -91,6 +92,8 @@ func TestCreatesFiles(t *testing.T) {
 }
 
 func TestUpdatesFiles(t *testing.T) {
+	ctx := context.Background()
+
 	cm := &corev1.ConfigMap{}
 	cm.ObjectMeta.Name = "test"
 	cm.Data = make(map[string]string)
@@ -103,7 +106,7 @@ func TestUpdatesFiles(t *testing.T) {
 	}
 
 	// make one of the files out of sync of the "cluster" so that we can see the update happening
-	err = ioutil.WriteFile(filepath.Join(state.workDir, "created1.txt"), []byte("origdata"), 0644)
+	err = os.WriteFile(filepath.Join(state.workDir, "created1.txt"), []byte("origdata"), 0644)
 	if err != nil {
 		t.Fatalf("Failed to precreate a file to be updated. %s", err)
 	}
@@ -114,9 +117,9 @@ func TestUpdatesFiles(t *testing.T) {
 			Namespace: cm.ObjectMeta.Namespace,
 		},
 	}
-	ctrl.Reconcile(req)
+	ctrl.Reconcile(ctx, req)
 
-	files, err := ioutil.ReadDir(state.workDir)
+	files, err := os.ReadDir(state.workDir)
 	if err != nil {
 		t.Fatalf("Failed to read the sync dir. %s", err)
 	}
@@ -130,12 +133,12 @@ func TestUpdatesFiles(t *testing.T) {
 
 	for _, f := range files {
 		if f.Name() == "created1.txt" {
-			contents, err := ioutil.ReadFile(filepath.Join(state.workDir, f.Name()))
+			contents, err := os.ReadFile(filepath.Join(state.workDir, f.Name()))
 			if err == nil && string(contents) == "data1" {
 				foundCreated1 = true
 			}
 		} else if f.Name() == "created2.txt" {
-			contents, err := ioutil.ReadFile(filepath.Join(state.workDir, f.Name()))
+			contents, err := os.ReadFile(filepath.Join(state.workDir, f.Name()))
 			if err == nil && string(contents) == "data2" {
 				foundCreated2 = true
 			}
@@ -152,6 +155,8 @@ func TestUpdatesFiles(t *testing.T) {
 }
 
 func TestDeletesFiles(t *testing.T) {
+	ctx := context.Background()
+
 	cm := &corev1.ConfigMap{}
 	cm.ObjectMeta.Name = "test"
 	cm.Data = make(map[string]string)
@@ -163,7 +168,7 @@ func TestDeletesFiles(t *testing.T) {
 	}
 
 	// make one of the files out of sync of the "cluster" so that we can see the update happening
-	err = ioutil.WriteFile(filepath.Join(state.workDir, "created1.txt"), []byte("data1"), 0644)
+	err = os.WriteFile(filepath.Join(state.workDir, "created1.txt"), []byte("data1"), 0644)
 	if err != nil {
 		t.Fatalf("Failed to precreate a file to be updated. %s", err)
 	}
@@ -174,9 +179,9 @@ func TestDeletesFiles(t *testing.T) {
 			Namespace: cm.ObjectMeta.Namespace,
 		},
 	}
-	ctrl.Reconcile(req)
+	ctrl.Reconcile(ctx, req)
 
-	files, err := ioutil.ReadDir(state.workDir)
+	files, err := os.ReadDir(state.workDir)
 	if err != nil {
 		t.Fatalf("Failed to read the sync dir. %s", err)
 	}
@@ -189,7 +194,7 @@ func TestDeletesFiles(t *testing.T) {
 
 	for _, f := range files {
 		if f.Name() == "created2.txt" {
-			contents, err := ioutil.ReadFile(filepath.Join(state.workDir, f.Name()))
+			contents, err := os.ReadFile(filepath.Join(state.workDir, f.Name()))
 			if err == nil && string(contents) == "data2" {
 				foundCreated2 = true
 			}
@@ -202,10 +207,13 @@ func TestDeletesFiles(t *testing.T) {
 }
 
 func TestPicksConfigMapsByLabel(t *testing.T) {
+	ctx := context.Background()
+
 	cm1 := &corev1.ConfigMap{}
 	cm1.ObjectMeta.Name = "test1"
 	cm1.Data = make(map[string]string)
 	cm1.Data["created1.txt"] = "data1"
+
 	cm2 := &corev1.ConfigMap{}
 	cm2.ObjectMeta.Name = "test2"
 	cm2.ObjectMeta.Labels = make(map[string]string)
@@ -224,7 +232,7 @@ func TestPicksConfigMapsByLabel(t *testing.T) {
 			Namespace: cm1.ObjectMeta.Namespace,
 		},
 	}
-	ctrl.Reconcile(req)
+	ctrl.Reconcile(ctx, req)
 
 	req = reconcile.Request{
 		NamespacedName: types.NamespacedName{
@@ -232,9 +240,9 @@ func TestPicksConfigMapsByLabel(t *testing.T) {
 			Namespace: cm2.ObjectMeta.Namespace,
 		},
 	}
-	ctrl.Reconcile(req)
+	ctrl.Reconcile(ctx, req)
 
-	files, err := ioutil.ReadDir(state.workDir)
+	files, err := os.ReadDir(state.workDir)
 	if err != nil {
 		t.Fatalf("Failed to read the sync dir. %s", err)
 	}
@@ -247,7 +255,7 @@ func TestPicksConfigMapsByLabel(t *testing.T) {
 
 	for _, f := range files {
 		if f.Name() == "created2.txt" {
-			contents, err := ioutil.ReadFile(filepath.Join(state.workDir, f.Name()))
+			contents, err := os.ReadFile(filepath.Join(state.workDir, f.Name()))
 			if err == nil && string(contents) == "data2" {
 				foundCreated2 = true
 			}
@@ -265,17 +273,16 @@ func testWith(labels string, cms ...runtime.Object) (client.Client, reconcile.Re
 	cfg := rest.Config{}
 
 	opts := manager.Options{
-		NewClient: func(cache cache.Cache, config *rest.Config, options client.Options) (client.Client, error) {
+		NewClient: func(ocnfig *rest.Config, options client.Options) (client.Client, error) {
 			return cl, nil
 		},
-		MapperProvider: func(c *rest.Config) (meta.RESTMapper, error) {
-			mapper := meta.NewDefaultRESTMapper(make([]schema.GroupVersion, 0))
-			return mapper, nil
-		},
+		// MapperProvider: func(c *rest.Config) (meta.RESTMapper, error) {
+		// 	mapper := meta.NewDefaultRESTMapper(make([]schema.GroupVersion, 0))
+		// 	return mapper, nil
+		// },
 		NewCache: func(config *rest.Config, opts cache.Options) (cache.Cache, error) {
 			return cache.Cache(&informertest.FakeInformers{}), nil
 		},
-		MetricsBindAddress:     "0",
 	}
 	mgr, err := manager.New(&cfg, opts)
 
@@ -283,22 +290,20 @@ func testWith(labels string, cms ...runtime.Object) (client.Client, reconcile.Re
 		return nil, nil, err
 	}
 
-	ctrl, err := New(mgr, ConfigMapReconcilerConfig{
+	config := ConfigMapReconcilerConfig{
 		BaseDir: state.workDir,
 		NewClient: func(*rest.Config) (client.Client, error) {
 			return cl, nil
 		},
 		Labels: labels,
-	})
-	if err != nil {
-		return nil, nil, err
 	}
 
-	return cl, ctrl, nil
+	reconciler, _ := New(mgr, config)
+	return cl, reconciler, nil
 }
 
 func setup() (testSetup, error) {
-	workDir, err := ioutil.TempDir("", "config-bump-test")
+	workDir, err := os.MkdirTemp("", "config-bump-test")
 	if err != nil {
 		return testSetup{}, err
 	}
