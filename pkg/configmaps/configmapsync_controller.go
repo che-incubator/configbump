@@ -3,20 +3,17 @@ package configmaps
 import (
 	"context"
 	"crypto/md5"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/rest"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 var log = logf.Log.WithName("configmaps")
@@ -44,7 +41,7 @@ type configMapReconciler struct {
 type configFiles = map[string][16]byte
 
 // New creates a config map reconciler with given configuration and configures a controller for it
-func New(mgr manager.Manager, config ConfigMapReconcilerConfig) (controller.Controller, error) {
+func New(mgr manager.Manager, config ConfigMapReconcilerConfig) (*configMapReconciler, error) {
 	lbls, err := labels.ConvertSelectorToLabelsMap(config.Labels)
 	if err != nil {
 		return nil, err
@@ -71,14 +68,17 @@ func New(mgr manager.Manager, config ConfigMapReconcilerConfig) (controller.Cont
 		return nil, err
 	}
 
-	ctrl, err := controller.New("config-bump", mgr, controller.Options{Reconciler: r})
-	err = ctrl.Watch(&source.Kind{Type: &corev1.ConfigMap{}}, &handler.EnqueueRequestForObject{})
+	return r, nil
+}
 
-	if err != nil {
-		return nil, err
-	}
-
-	return ctrl, nil
+func (r *configMapReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewControllerManagedBy(mgr).
+		Named("config-bump").
+		Watches(
+			&corev1.ConfigMap{},
+			&handler.EnqueueRequestForObject{},
+		).
+		Complete(r)
 }
 
 // sync performs the sync of the local set of files with the configured config maps
@@ -120,7 +120,7 @@ func (c *configMapReconciler) sync(managerRunning bool) error {
 			doWrite := false
 			if _, err := os.Stat(path); err == nil || os.IsExist(err) {
 				// if the file exists
-				if content, err := ioutil.ReadFile(path); err != nil {
+				if content, err := os.ReadFile(path); err != nil {
 					log.Error(err, "Failed to open the config file to see if it changed", "file", path)
 				} else {
 					dataHash := md5.Sum([]byte(data))
@@ -148,7 +148,7 @@ func (c *configMapReconciler) sync(managerRunning bool) error {
 	}
 
 	// now go through all the existing files and delete those we have not processed while reading the config maps
-	files, err := ioutil.ReadDir(c.config.BaseDir)
+	files, err := os.ReadDir(c.config.BaseDir)
 	if err != nil {
 		return err
 	}
@@ -178,7 +178,7 @@ func (c *configMapReconciler) sync(managerRunning bool) error {
 }
 
 // Reconcile handles the changes in the configured config maps
-func (c *configMapReconciler) Reconcile(r reconcile.Request) (reconcile.Result, error) {
+func (c *configMapReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	err := c.sync(true)
-	return reconcile.Result{}, err
+	return ctrl.Result{}, err
 }

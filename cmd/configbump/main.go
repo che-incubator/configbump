@@ -1,18 +1,21 @@
 package main
 
 import (
-	"github.com/go-logr/zapr"
-	"go.uber.org/zap"
+	"context"
 	"os"
 
 	arg "github.com/alexflint/go-arg"
 	"github.com/che-incubator/configbump/pkg/configmaps"
-	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
-	"github.com/operator-framework/operator-sdk/pkg/ready"
+	"github.com/go-logr/zapr"
+	"go.uber.org/zap"
+
+	// controller-runtime imports
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 // Opts represents the commandline arguments to the executable
@@ -43,6 +46,9 @@ const controllerName = "config-bump"
 var log = logf.Log.WithName(controllerName)
 
 func main() {
+	// Setup signal handler to gracefully shut down the manager
+	ctx := signals.SetupSignalHandler()
+
 	zap, err := zap.NewProduction()
 	if err != nil {
 		println("Failed to initialize a zap logger.")
@@ -61,51 +67,51 @@ func main() {
 
 	// once process signalling is implemented, we can call:
 	// initializeConfigMapController(opts.Labels, opts.Dir, b.Bump)
-	if err := initializeConfigMapController(opts.Labels, opts.Dir, opts.Namespace, func() error { return nil }); err != nil {
+	if err := initializeConfigMapController(ctx, opts.Labels, opts.Dir, opts.Namespace, func() error { return nil }); err != nil {
 		log.Error(err, "Could not initialize the config map sync controller")
 		os.Exit(1)
 	}
 }
 
-func initializeConfigMapController(labels string, baseDir string, namespace string, onReconcileDone func() error) error {
-	// Get a config to talk to the apiserver
+func initializeConfigMapController(ctx context.Context, labels string, baseDir string, namespace string, onReconcileDone func() error) error {
 	cfg, err := config.GetConfig()
 	if err != nil {
+		log.Error(err, "Could not get config from API server")
 		return err
 	}
 
 	if namespace == "" {
-		namespace, err = k8sutil.GetWatchNamespace()
-		if err != nil {
-			namespace, err = k8sutil.GetOperatorNamespace()
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	ready := ready.NewFileReady()
-	err = ready.Set()
-	if err != nil {
-		return err
-	}
-	defer ready.Unset()
-
-	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: "0", Namespace: namespace})
-	if err != nil {
+		log.Error(err, "Namespace was not provided via commandline arguments")
 		return err
 	}
 
-	_, err = configmaps.New(mgr, configmaps.ConfigMapReconcilerConfig{
+	mgr, err := manager.New(cfg, manager.Options{
+		Metrics: metricsserver.Options{
+			BindAddress: "0",
+		},
+		Cache: cache.Options{
+			DefaultNamespaces: map[string]cache.Config{namespace: cache.Config{}},
+		},
+	})
+	if err != nil {
+		log.Error(err, "Could not create a manager for creating controllers")
+		return err
+	}
+
+	configmapReconciler, err := configmaps.New(mgr, configmaps.ConfigMapReconcilerConfig{
 		BaseDir:         baseDir,
 		Labels:          labels,
 		OnReconcileDone: onReconcileDone,
 		Namespace:       namespace,
 	})
-
 	if err != nil {
+		log.Error(err, "Could not initialize configmaps reconciler")
 		return err
 	}
 
-	return mgr.Start(signals.SetupSignalHandler())
+	if err = configmapReconciler.SetupWithManager(mgr); err != nil {
+		log.Error(err, "Could not setup the manager with configmaps reconciler")
+		return err
+	}
+	return mgr.Start(ctx)
 }

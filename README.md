@@ -21,7 +21,7 @@ When the process signalling is implemented, this tool will be compatible with ma
 
 We originally wrote a prototype of this tool in Rust (https://github.com/metlos/cm-bump) that implements both configmap syncing and process signalling and we successfully used it for dynamic reconfiguration of HAProxy, Nginx and Traefik.
 
-## Configuration
+## Run
 
 ```
 $ ./configbump --help
@@ -36,6 +36,20 @@ Options:
                          The namespace in which to look for the config maps to persist. Can also be specified using env var: CONFIG_BUMP_NAMESPACE. If not specified, it is autodetected.
   --help, -h             display this help and exit
   --version              display version and exit
+```
+
+## Build
+
+build the container by running these commands in the project root directory
+```
+IMG=quay.io/eclipse-che/configbump:next
+podman build -t ${IMG} -f build/dockerfiles/Dockerfile .
+```
+
+Or build the configbump binary like this
+
+```
+go build -a -ldflags '-w -s' -a -installsuffix cgo -o configbump cmd/configbump/main.go
 ```
 
 ## Examples
