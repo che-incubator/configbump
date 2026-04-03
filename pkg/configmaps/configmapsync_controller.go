@@ -12,8 +12,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 var log = logf.Log.WithName("configmaps")
@@ -73,6 +73,7 @@ func New(mgr manager.Manager, config ConfigMapReconcilerConfig) (*configMapRecon
 
 func (r *configMapReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
+		Named("config-bump").
 		Watches(
 			&corev1.ConfigMap{},
 			&handler.EnqueueRequestForObject{},

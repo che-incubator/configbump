@@ -10,12 +10,12 @@ import (
 	"go.uber.org/zap"
 
 	// controller-runtime imports
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 // Opts represents the commandline arguments to the executable
@@ -74,26 +74,27 @@ func main() {
 }
 
 func initializeConfigMapController(ctx context.Context, labels string, baseDir string, namespace string, onReconcileDone func() error) error {
-	// Get a config to talk to the apiserver
 	cfg, err := config.GetConfig()
 	if err != nil {
+		log.Error(err, "Could not get config from API server")
 		return err
 	}
 
-	// If namespace is not provided via arguments, try to get it from the environment.
-	// If it remains empty, the manager will watch all namespaces.
 	if namespace == "" {
-		if watchNs, found := os.LookupEnv("WATCH_NAMESPACE"); found {
-			namespace = watchNs
-		}
+		log.Error(err, "Namespace was not provided via commandline arguments")
+		return err
 	}
 
 	mgr, err := manager.New(cfg, manager.Options{
 		Metrics: metricsserver.Options{
-			BindAddress:   "0",
+			BindAddress: "0",
+		},
+		Cache: cache.Options{
+			DefaultNamespaces: map[string]cache.Config{namespace: cache.Config{}},
 		},
 	})
 	if err != nil {
+		log.Error(err, "Could not create a manager for creating controllers")
 		return err
 	}
 
@@ -103,9 +104,14 @@ func initializeConfigMapController(ctx context.Context, labels string, baseDir s
 		OnReconcileDone: onReconcileDone,
 		Namespace:       namespace,
 	})
+	if err != nil {
+		log.Error(err, "Could not initialize configmaps reconciler")
+		return err
+	}
 
 	if err = configmapReconciler.SetupWithManager(mgr); err != nil {
-		os.Exit(1)
+		log.Error(err, "Could not setup the manager with configmaps reconciler")
+		return err
 	}
-	return mgr.Start(ctrl.SetupSignalHandler())
+	return mgr.Start(ctx)
 }

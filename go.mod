@@ -3,7 +3,7 @@ module github.com/che-incubator/configbump
 go 1.25.5
 
 require (
-	github.com/alexflint/go-arg v1.3.0
+	github.com/alexflint/go-arg v1.6.1
 	github.com/go-logr/zapr v1.3.0
 	go.uber.org/zap v1.27.0
 	k8s.io/api v0.34.1
@@ -13,7 +13,7 @@ require (
 )
 
 require (
-	github.com/alexflint/go-scalar v1.0.0 // indirect
+	github.com/alexflint/go-scalar v1.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
