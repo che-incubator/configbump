@@ -63,7 +63,7 @@ func New(mgr manager.Manager, config ConfigMapReconcilerConfig) (*configMapRecon
 		selector:      lbls.AsSelector(),
 	}
 
-	err = r.sync(false)
+	err = r.sync(false, context.TODO())
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func (r *configMapReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 // sync performs the sync of the local set of files with the configured config maps
-func (c *configMapReconciler) sync(managerRunning bool) error {
+func (c *configMapReconciler) sync(managerRunning bool, ctx context.Context) error {
 	if c.config.OnReconcileDone != nil {
 		defer c.config.OnReconcileDone()
 	}
@@ -104,7 +104,7 @@ func (c *configMapReconciler) sync(managerRunning bool) error {
 		client.MatchingLabelsSelector{Selector: c.selector},
 	}
 
-	if err := cl.List(context.TODO(), list, opts...); err != nil {
+	if err := cl.List(ctx, list, opts...); err != nil {
 		return err
 	}
 
@@ -179,6 +179,6 @@ func (c *configMapReconciler) sync(managerRunning bool) error {
 
 // Reconcile handles the changes in the configured config maps
 func (c *configMapReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	err := c.sync(true)
+	err := c.sync(true, ctx)
 	return ctrl.Result{}, err
 }

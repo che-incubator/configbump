@@ -276,10 +276,6 @@ func testWith(labels string, cms ...runtime.Object) (client.Client, reconcile.Re
 		NewClient: func(ocnfig *rest.Config, options client.Options) (client.Client, error) {
 			return cl, nil
 		},
-		// MapperProvider: func(c *rest.Config) (meta.RESTMapper, error) {
-		// 	mapper := meta.NewDefaultRESTMapper(make([]schema.GroupVersion, 0))
-		// 	return mapper, nil
-		// },
 		NewCache: func(config *rest.Config, opts cache.Options) (cache.Cache, error) {
 			return cache.Cache(&informertest.FakeInformers{}), nil
 		},
@@ -298,7 +294,10 @@ func testWith(labels string, cms ...runtime.Object) (client.Client, reconcile.Re
 		Labels: labels,
 	}
 
-	reconciler, _ := New(mgr, config)
+	reconciler, err := New(mgr, config)
+	if err != nil {
+		return nil, nil, err
+	}
 	return cl, reconciler, nil
 }
 

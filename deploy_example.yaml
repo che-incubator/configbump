@@ -51,7 +51,7 @@ spec:
         - name: dynamic-config
           mountPath: "/dynamic-config"
     - name: config-map-sync
-      image: quay.io/che-incubator/configbump:latest
+      image: quay.io/che-incubator/configbump:next
       env:
         - name: CONFIG_BUMP_DIR
           value: "/dynamic-config"

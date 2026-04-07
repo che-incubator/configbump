@@ -5,7 +5,7 @@
 *.so
 *.dylib
 __debug_bin
-configbump
+/configbump
 
 # Test binary, built with `go test -c`
 *.test

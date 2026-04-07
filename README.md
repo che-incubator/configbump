@@ -40,15 +40,16 @@ Options:
 
 ## Build
 
-build the container by running these commands in the project root directory
-```
-IMG=quay.io/eclipse-che/configbump:next
+build the container by running these commands in the project root directory:
+
+```sh
+IMG=quay.io/che-incubator/configbump:next
 podman build -t ${IMG} -f build/dockerfiles/Dockerfile .
 ```
 
-Or build the configbump binary like this
+Or build the configbump binary like this (requires Go 1.25.5+):
 
-```
+```sh
 go build -a -ldflags '-w -s' -a -installsuffix cgo -o configbump cmd/configbump/main.go
 ```
 

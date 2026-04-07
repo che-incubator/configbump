@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"os"
 
 	arg "github.com/alexflint/go-arg"
@@ -81,7 +82,8 @@ func initializeConfigMapController(ctx context.Context, labels string, baseDir s
 	}
 
 	if namespace == "" {
-		log.Error(err, "Namespace was not provided via commandline arguments")
+		err := errors.New("namespace was not provided via commandline arguments")
+		log.Error(err, "Configmap controller initialization failed")
 		return err
 	}
 
