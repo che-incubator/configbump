@@ -273,7 +273,7 @@ func testWith(labels string, cms ...runtime.Object) (client.Client, reconcile.Re
 	cfg := rest.Config{}
 
 	opts := manager.Options{
-		NewClient: func(ocnfig *rest.Config, options client.Options) (client.Client, error) {
+		NewClient: func(config *rest.Config, options client.Options) (client.Client, error) {
 			return cl, nil
 		},
 		NewCache: func(config *rest.Config, opts cache.Options) (cache.Cache, error) {

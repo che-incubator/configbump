@@ -33,12 +33,7 @@ type configMapReconciler struct {
 	newClientFunc func(*rest.Config) (client.Client, error)
 	config        ConfigMapReconcilerConfig
 	selector      labels.Selector
-	baseDir       string
-	namespace     string
 }
-
-// configFiles is a map where keys are the names of the files and values are digests of their content
-type configFiles = map[string][16]byte
 
 // New creates a config map reconciler with given configuration and configures a controller for it
 func New(mgr manager.Manager, config ConfigMapReconcilerConfig) (*configMapReconciler, error) {
