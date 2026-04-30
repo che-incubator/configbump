@@ -1,0 +1,11 @@
+schemaVersion: 2.3.0
+metadata:
+  name: configbump
+components:
+  - name: tools
+    container:
+      image: quay.io/devfile/devworkspace-devtools:latest
+      memoryRequest: 1Gi
+      memoryLimit: 16Gi
+      cpuLimit: '4'
+      cpuRequest: '0.5'
