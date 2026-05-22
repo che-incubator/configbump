@@ -21,7 +21,7 @@ WORKDIR /app
 COPY . ./
 
 #hadolint ignore=SC3010
-RUN export ARCH="$(uname -m)" && if [[ ${ARCH} == "x86_64" ]]; then export ARCH="amd64"; elif [[ ${ARCH} == "aarch64" ]]; then export ARCH="arm64"; fi && \
+RUN export ARCH="$(uname -m)" && if [[ ${ARCH} == "x86_64" ]]; then export ARCH="amd64"; elif [[ ${ARCH} == "aarch64" ]]; then export ARCH="arm64"; elif [[ ${ARCH} == "s390x" ]]; then export ARCH="s390x"; fi && \
     go mod download && go mod verify && \
     go test -v  ./... && \
     # to test FIPS compliance, run https://github.com/openshift/check-payload#scan-a-container-or-operator-image against a built image
